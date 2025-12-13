@@ -1,0 +1,3 @@
+nohup: ignoring input
+Import API server running on http://localhost:3001
+AI endpoints available at http://localhost:3001/api/ai

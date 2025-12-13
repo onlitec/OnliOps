@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Arquitetura de Rede – Calabasas</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="assets/style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true,theme:"default"});</script>
+</head>
+<body>
+  <header class="header">
+    <h1>Arquitetura de Rede – Condomínio Calabasas</h1>
+    <div class="controls">
+      <button id="play">Play</button>
+      <button id="pause">Pause</button>
+      <button id="rewind">Rewind</button>
+    </div>
+  </header>
+  <nav class="nav">
+    <a href="#visao">Visão Geral</a>
+    <a href="#fluxos">Fluxos de Dados</a>
+    <a href="#modulos">Módulos</a>
+    <a href="#simulacoes">Simulações</a>
+    <a href="#versoes">Versionamento</a>
+  </nav>
+  <main class="main">
+    <section id="visao" class="card">
+      <h2>Visão Geral do Sistema</h2>
+      <div class="mermaid">
+        graph LR
+          Internet((Internet))---FW[Firewall]
+          FW---CoreSW[Core Switch]
+          CoreSW---VLAN10[(VLAN 10 Management)]
+          CoreSW---VLAN20[(VLAN 20 Data)]
+          CoreSW---VLAN30[(VLAN 30 Voice)]
+          CoreSW---VLAN40[(VLAN 40 CFTV)]
+          CoreSW---VLAN50[(VLAN 50 Access Control)]
+          CoreSW---VLAN60[(VLAN 60 IoT)]
+          CoreSW---VLAN100[(VLAN 100 Guest)]
+          VLAN20-->HikCentral[Servidor HikCentral 10.10.20.10]
+          VLAN40-->CFTV[NVRs e Câmeras]
+          VLAN50-->AC[Controladoras e Leitores]
+          VLAN60-->IoT[Dispositivos IoT]
+          VLAN10-->Mgmt[Gerenciamento]
+      </div>
+    </section>
+    <section id="fluxos" class="card">
+      <h2>Fluxos de Dados (UML 2.0)</h2>
+      <div class="mermaid">
+        sequenceDiagram
+          participant LeitorFacial as Leitor Facial
+          participant Controladora as Controladora de Acesso
+          participant Elevador as Interface Elevador
+          participant HikCentral as HikCentral
+          LeitorFacial->>Controladora: Token facial válido
+          Controladora->>HikCentral: Registrar evento
+          Controladora->>Elevador: Liberar andar
+          Elevador-->>Controladora: Confirmação
+          HikCentral-->>Controladora: OK
+      </div>
+      <div class="mermaid">
+        sequenceDiagram
+          participant Portaria as Portaria
+          participant Cancela as Cancela/Porteira
+          participant AC as Controle de Acesso
+          participant Hik as HikCentral
+          Portaria->>AC: Solicitação de abertura
+          AC->>Hik: Verificar permissão
+          Hik-->>AC: Permissão concedida
+          AC->>Cancela: Abrir
+          Cancela-->>AC: Estado aberto
+      </div>
+    </section>
+    <section id="modulos" class="card">
+      <h2>Módulos</h2>
+      <div class="modules">
+        <article class="module">
+          <h3>Controle de Acesso</h3>
+          <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExTS9kZmlsdGVy/5hdNQfQYc5eU4/giphy.gif" alt="Controle de Acesso">
+        </article>
+        <article class="module">
+          <h3>Reconhecimento Facial</h3>
+          <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExTS9kZmlsdGVy/3o7btMCltyDvSgF92E/giphy.gif" alt="Reconhecimento Facial">
+        </article>
+        <article class="module">
+          <h3>CFTV</h3>
+          <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExTS9kZmlsdGVy/l0MYt5jPR6QX5pnqM/giphy.gif" alt="CFTV">
+        </article>
+      </div>
+    </section>
+    <section id="simulacoes" class="card">
+      <h2>Simulações em Tempo Real</h2>
+      <div class="sim-grid">
+        <div class="sim-block">
+          <h4>Acesso Facial Elevadores</h4>
+          <div class="sim-canvas" id="sim-elevador"></div>
+          <div class="sim-actions">
+            <button data-sim="sim-elevador" data-action="start">Iniciar</button>
+            <button data-sim="sim-elevador" data-action="pause">Pausar</button>
+            <button data-sim="sim-elevador" data-action="rewind">Reiniciar</button>
+          </div>
+        </div>
+        <div class="sim-block">
+          <h4>Portaria e Portões</h4>
+          <div class="sim-canvas" id="sim-portaria"></div>
+          <div class="sim-actions">
+            <button data-sim="sim-portaria" data-action="start">Iniciar</button>
+            <button data-sim="sim-portaria" data-action="pause">Pausar</button>
+            <button data-sim="sim-portaria" data-action="rewind">Reiniciar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="versoes" class="card">
+      <h2>Versionamento</h2>
+      <div id="version-info"></div>
+    </section>
+  </main>
+  <script src="assets/app.js"></script>
+</body>
+</html>

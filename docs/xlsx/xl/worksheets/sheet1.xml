@@ -1,0 +1,43 @@
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c t="inlineStr"><is><t>VLAN ID</t></is></c>
+      <c t="inlineStr"><is><t>Descrição</t></is></c>
+      <c t="inlineStr"><is><t>Sub-rede</t></is></c>
+      <c t="inlineStr"><is><t>Máscara</t></is></c>
+      <c t="inlineStr"><is><t>Gateway</t></is></c>
+      <c t="inlineStr"><is><t>Faixa IP Reservada</t></is></c>
+      <c t="inlineStr"><is><t>Equipamentos Associados</t></is></c>
+      <c t="inlineStr"><is><t>QoS DSCP</t></is></c>
+      <c t="inlineStr"><is><t>QoS 802.1p</t></is></c>
+      <c t="inlineStr"><is><t>Prioridade</t></is></c>
+      <c t="inlineStr"><is><t>Largura de Banda</t></is></c>
+      <c t="inlineStr"><is><t>Observações</t></is></c>
+    </row>
+    <row r="2">
+      <c t="inlineStr"><is><t>30</t></is></c>
+      <c t="inlineStr"><is><t>Voz (SIP/RTP de faciais)</t></is></c>
+      <c t="inlineStr"><is><t>10.10.30.0/24</t></is></c>
+      <c t="inlineStr"><is><t>255.255.255.0</t></is></c>
+      <c t="inlineStr"><is><t>10.10.30.1</t></is></c>
+      <c t="inlineStr"><is><t>10.10.30.50–10.10.30.99</t></is></c>
+      <c t="inlineStr"><is><t>DS-K1T673D</t></is></c>
+      <c t="inlineStr"><is><t>EF (46)</t></is></c>
+      <c t="inlineStr"><is><t>5</t></is></c>
+      <c t="inlineStr"><is><t>Medium</t></is></c>
+      <c t="inlineStr"><is><t>100M agregado</t></is></c>
+      <c t="inlineStr"><is><t>LLDP habilitado para Voice VLAN</t></is></c>
+    </row>
+    <row r="3">
+      <c t="inlineStr"><is><t>FAC-001</t></is></c>
+      <c t="inlineStr"><is><t>DS-K1T673D</t></is></c>
+      <c t="inlineStr"><is><t>HALL TORRE 1</t></is></c>
+      <c t="inlineStr"><is><t>10.10.30.51</t></is></c>
+      <c t="inlineStr"><is><t>EF (46)</t></is></c>
+      <c t="inlineStr"><is><t>5</t></is></c>
+      <c t="inlineStr"><is><t>Medium</t></is></c>
+      <c t="inlineStr"><is><t>4–8 Mbps</t></is></c>
+      <c t="inlineStr"><is><t>Enable Voice VLAN=Yes; ID=30; Priority=6</t></is></c>
+    </row>
+  </sheetData>
+</worksheet>

@@ -1,0 +1,15 @@
+<html><head><meta charset="utf-8"><title>VLAN_Dados</title><link href="_style.css" rel="stylesheet"></head><body>
+<table>
+<caption>VLAN Dados (ID 20)</caption>
+<tr><th>VLAN ID</th><th>Descrição</th><th>Sub-rede</th><th>Máscara</th><th>Gateway</th><th>Dispositivos</th><th>Políticas de Segurança</th><th>QoS DSCP</th><th>QoS 802.1p</th><th>Prioridade</th><th>Roteamento</th><th>Observações</th></tr>
+<tr><td>20</td><td>Dados (eventos/logs)</td><td>10.10.20.0/24</td><td>255.255.255.0</td><td>10.10.20.1</td><td>Faciais, Controladoras, Leitores</td><td>802.1X; ACLs inter-VLAN</td><td>AF31/CS0</td><td>3–5</td><td>Medium</td><td>20→10, 20↔30, 20→99 restrito</td><td>Faciais com Voz em 30 e Vídeo em 10</td></tr>
+</table>
+
+<table>
+<caption>Dispositivos Dados</caption>
+<tr><th>TAG</th><th>Modelo</th><th>Local</th><th>IP</th><th>QoS DSCP</th><th>802.1p</th><th>Prioridade</th><th>Observações</th></tr>
+<tr><td>FAC-001</td><td>DS-K1T673D</td><td>HALL TORRE 1</td><td>10.10.20.51</td><td>AF31</td><td>3–5</td><td>Medium</td><td>Eventos/logs</td></tr>
+<tr><td>CTL-AC-01</td><td>Controladora</td><td>SALA TÉCNICA</td><td>10.10.20.10</td><td>CS0</td><td>3</td><td>Medium</td><td>Integra elevadores/portaria</td></tr>
+<tr><td>LDR-AC-01</td><td>Leitor</td><td>TORRE 1</td><td>10.10.20.80</td><td>CS0</td><td>3</td><td>Medium</td><td>PVID 20 em porta</td></tr>
+</table>
+</body></html>

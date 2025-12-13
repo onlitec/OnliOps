@@ -1,0 +1,19 @@
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c t="inlineStr"><is><t>TAG</t></is></c>
+      <c t="inlineStr"><is><t>Modelo</t></is></c>
+      <c t="inlineStr"><is><t>Local</t></is></c>
+      <c t="inlineStr"><is><t>IP</t></is></c>
+      <c t="inlineStr"><is><t>VLAN</t></is></c>
+      <c t="inlineStr"><is><t>QoS Priority</t></is></c>
+      <c t="inlineStr"><is><t>Observações</t></is></c>
+    </row>
+    <row r="2"><c t="inlineStr"><is><t>CA-001</t></is></c><c t="inlineStr"><is><t>DS-2CD2T46G2H-2I</t></is></c><c t="inlineStr"><is><t>PORTÃO PEDESTRE T1</t></is></c><c t="inlineStr"><is><t>10.10.0.51</t></is></c><c t="inlineStr"><is><t>10</t></is></c><c t="inlineStr"><is><t>High (Video)</t></is></c><c t="inlineStr"><is><t>PoE; Outdoor</t></is></c></row>
+    <row r="3"><c t="inlineStr"><is><t>CA-002</t></is></c><c t="inlineStr"><is><t>DS-2CD2T46G2H-2I</t></is></c><c t="inlineStr"><is><t>VISTA DIREITA 1</t></is></c><c t="inlineStr"><is><t>10.10.0.52</t></is></c><c t="inlineStr"><is><t>10</t></is></c><c t="inlineStr"><is><t>High (Video)</t></is></c><c t="inlineStr"><is><t>PoE; Outdoor</t></is></c></row>
+    <row r="4"><c t="inlineStr"><is><t>CA-003</t></is></c><c t="inlineStr"><is><t>DS-2CD2T46G2H-2I</t></is></c><c t="inlineStr"><is><t>VISTA DIREITA 2</t></is></c><c t="inlineStr"><is><t>10.10.0.53</t></is></c><c t="inlineStr"><is><t>10</t></is></c><c t="inlineStr"><is><t>High (Video)</t></is></c><c t="inlineStr"><is><t>PoE; Outdoor</t></is></c></row>
+    <row r="5"><c t="inlineStr"><is><t>CA-010</t></is></c><c t="inlineStr"><is><t>DS-2CD1023G2-LIU</t></is></c><c t="inlineStr"><is><t>INTERNA BLOCO A</t></is></c><c t="inlineStr"><is><t>10.10.0.60</t></is></c><c t="inlineStr"><is><t>10</t></is></c><c t="inlineStr"><is><t>High (Video)</t></is></c><c t="inlineStr"><is><t>PoE; Indoor</t></is></c></row>
+    <row r="6"><c t="inlineStr"><is><t>CA-011</t></is></c><c t="inlineStr"><is><t>DS-2CD1023G2-LIU</t></is></c><c t="inlineStr"><is><t>INTERNA BLOCO B</t></is></c><c t="inlineStr"><is><t>10.10.0.61</t></is></c><c t="inlineStr"><is><t>10</t></is></c><c t="inlineStr"><is><t>High (Video)</t></is></c><c t="inlineStr"><is><t>PoE; Indoor</t></is></c></row>
+    <row r="7"><c t="inlineStr"><is><t>...</t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t>Preencher até CA-138 seguindo padrão</t></is></c></row>
+  </sheetData>
+</worksheet>

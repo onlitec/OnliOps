@@ -1,0 +1,18 @@
+{
+  "current": {
+    "version": "1.0.0",
+    "date": "2025-11-23",
+    "notes": "Entrega inicial: plataforma web, documentação e materiais de suporte"
+  },
+  "history": [
+    {
+      "version": "1.0.0",
+      "date": "2025-11-23",
+      "changes": [
+        "Plataforma web responsiva com diagramas e animações",
+        "Planilha técnica com SWOT, recomendações, cronograma e equipamentos",
+        "Manuais, scripts de automação, checklists e fluxogramas"
+      ]
+    }
+  ]
+}

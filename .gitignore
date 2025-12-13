@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.env
+BKP/
+.DS_Store

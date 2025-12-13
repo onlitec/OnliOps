@@ -1,0 +1,15 @@
+<html><head><meta charset="utf-8"><title>VLAN_Voz</title><link href="_style.css" rel="stylesheet"></head><body>
+<table>
+<caption>VLAN Voz (ID 30)</caption>
+<tr><th>VLAN ID</th><th>Descrição</th><th>Sub-rede</th><th>Máscara</th><th>Gateway</th><th>Faixa IP Reservada</th><th>Equipamentos Associados</th><th>QoS DSCP</th><th>QoS 802.1p</th><th>Prioridade</th><th>Largura de Banda</th><th>Observações</th></tr>
+<tr><td>30</td><td>Voz (SIP/RTP de faciais)</td><td>10.10.30.0/24</td><td>255.255.255.0</td><td>10.10.30.1</td><td>10.10.30.50–10.10.30.99</td><td>DS-K1T673D</td><td>EF (46)</td><td>5</td><td>Medium</td><td>100M agregado</td><td>LLDP habilitado para Voice VLAN</td></tr>
+</table>
+
+<table>
+<caption>Equipamentos Voz</caption>
+<tr><th>TAG</th><th>Modelo</th><th>Local</th><th>IP Voz</th><th>DSCP</th><th>802.1p</th><th>Prioridade</th><th>Largura</th><th>Observações</th></tr>
+<tr><td>FAC-001</td><td>DS-K1T673D</td><td>HALL TORRE 1</td><td>10.10.30.51</td><td>EF (46)</td><td>5</td><td>Medium</td><td>4–8 Mbps</td><td>Enable Voice VLAN=Yes; ID=30; Priority=6</td></tr>
+<tr><td>FAC-002</td><td>DS-K1T673D</td><td>HALL TORRE 2</td><td>10.10.30.52</td><td>EF (46)</td><td>5</td><td>Medium</td><td>4–8 Mbps</td><td>LLDP ativo</td></tr>
+<tr><td>FAC-003</td><td>DS-K1T673D</td><td>HALL TORRE 3</td><td>10.10.30.53</td><td>EF (46)</td><td>5</td><td>Medium</td><td>4–8 Mbps</td><td>Sincronização SIP (se aplicável)</td></tr>
+</table>
+</body></html>

@@ -1,0 +1,15 @@
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1"><c t="inlineStr"><is><t>RouterOS Script</t></is></c></row>
+    <row r="2"><c t="inlineStr"><is><t>/interface vlan add name=vlan10-cftv vlan-id=10 interface=bridge</t></is></c></row>
+    <row r="3"><c t="inlineStr"><is><t>/interface vlan add name=vlan20-dados vlan-id=20 interface=bridge</t></is></c></row>
+    <row r="4"><c t="inlineStr"><is><t>/interface vlan add name=vlan30-voz vlan-id=30 interface=bridge</t></is></c></row>
+    <row r="5"><c t="inlineStr"><is><t>/interface vlan add name=vlan99-mgmt vlan-id=99 interface=bridge</t></is></c></row>
+    <row r="6"><c t="inlineStr"><is><t>/ip address add address=10.10.0.1/24 interface=vlan10-cftv</t></is></c></row>
+    <row r="7"><c t="inlineStr"><is><t>/ip address add address=10.10.20.1/24 interface=vlan20-dados</t></is></c></row>
+    <row r="8"><c t="inlineStr"><is><t>/ip address add address=10.10.30.1/24 interface=vlan30-voz</t></is></c></row>
+    <row r="9"><c t="inlineStr"><is><t>/ip address add address=10.10.99.1/24 interface=vlan99-mgmt</t></is></c></row>
+    <row r="10"><c t="inlineStr"><is><t>/ip firewall mangle add chain=forward protocol=tcp dst-port=554 action=mark-connection new-connection-mark=video</t></is></c></row>
+    <row r="11"><c t="inlineStr"><is><t>/queue tree add name=queue-video parent=global priority=1 limit-at=500M max-limit=500M packet-mark=video</t></is></c></row>
+  </sheetData>
+</worksheet>

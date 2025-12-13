@@ -1,0 +1,109 @@
+{
+  "sessionId": "1765594708223",
+  "filePath": "/opt/calabasas/server/uploads/1765594708223-778966956-CÃ³pia de IP Senhas Condominio Calabasas.xlsx",
+  "fileName": "CÃ³pia de IP Senhas Condominio Calabasas.xlsx",
+  "sheets": [
+    {
+      "name": "IP - CFTV",
+      "headers": [
+        "LISTA DE EQUIPAMENTOS - CONDOMINIO CALABASAS"
+      ],
+      "rowCount": 163,
+      "sampleRows": [
+        {},
+        {},
+        {}
+      ],
+      "autoMapping": {
+        "ip_address": null,
+        "serial_number": null,
+        "model": null,
+        "manufacturer": null,
+        "hostname": null,
+        "mac_address": null,
+        "location": null,
+        "status": null,
+        "description": null
+      },
+      "aiSuggestion": null,
+      "isDeviceSheet": false
+    },
+    {
+      "name": "PORTAS - CONTROLE DE ACESSO",
+      "headers": [
+        "MAPEAMENTO DE PORTAS"
+      ],
+      "rowCount": 279,
+      "sampleRows": [
+        {},
+        {},
+        {}
+      ],
+      "autoMapping": {
+        "ip_address": null,
+        "serial_number": null,
+        "model": null,
+        "manufacturer": null,
+        "hostname": null,
+        "mac_address": null,
+        "location": null,
+        "status": null,
+        "description": null
+      },
+      "aiSuggestion": null,
+      "isDeviceSheet": false
+    },
+    {
+      "name": "IP - CONTROLE DE ACESSO",
+      "headers": [],
+      "rowCount": 158,
+      "sampleRows": [
+        {},
+        {},
+        {}
+      ],
+      "autoMapping": {
+        "ip_address": null,
+        "serial_number": null,
+        "model": null,
+        "manufacturer": null,
+        "hostname": null,
+        "mac_address": null,
+        "location": null,
+        "status": null,
+        "description": null
+      },
+      "aiSuggestion": null,
+      "isDeviceSheet": false
+    },
+    {
+      "name": "PORTAS - CFTV",
+      "headers": [
+        "MAPEAMENTO DE PORTAS"
+      ],
+      "rowCount": 200,
+      "sampleRows": [
+        {},
+        {},
+        {
+          "MAPEAMENTO DE PORTAS": "SW-00-RK-00 - 10.10.0.100"
+        }
+      ],
+      "autoMapping": {
+        "ip_address": null,
+        "serial_number": null,
+        "model": null,
+        "manufacturer": null,
+        "hostname": null,
+        "mac_address": null,
+        "location": null,
+        "status": null,
+        "description": null
+      },
+      "aiSuggestion": null,
+      "isDeviceSheet": false
+    }
+  ],
+  "uploadedAt": "2025-12-13T03:00:30.534Z",
+  "projectId": "a637e92b-469c-4603-ab4a-d07c89acaa63"
+}

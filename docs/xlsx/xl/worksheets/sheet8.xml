@@ -1,0 +1,20 @@
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c t="inlineStr"><is><t>TAG</t></is></c>
+      <c t="inlineStr"><is><t>Tipo</t></is></c>
+      <c t="inlineStr"><is><t>Modelo</t></is></c>
+      <c t="inlineStr"><is><t>Local</t></is></c>
+      <c t="inlineStr"><is><t>IP Dados</t></is></c>
+      <c t="inlineStr"><is><t>VLAN Dados</t></is></c>
+      <c t="inlineStr"><is><t>IP Voz</t></is></c>
+      <c t="inlineStr"><is><t>VLAN Voz</t></is></c>
+      <c t="inlineStr"><is><t>QoS Priority</t></is></c>
+      <c t="inlineStr"><is><t>Observações</t></is></c>
+    </row>
+    <row r="2"><c t="inlineStr"><is><t>FAC-001</t></is></c><c t="inlineStr"><is><t>Facial</t></is></c><c t="inlineStr"><is><t>DS-K1T673D</t></is></c><c t="inlineStr"><is><t>HALL TORRE 1</t></is></c><c t="inlineStr"><is><t>10.10.20.51</t></is></c><c t="inlineStr"><is><t>20</t></is></c><c t="inlineStr"><is><t>10.10.30.51</t></is></c><c t="inlineStr"><is><t>30</t></is></c><c t="inlineStr"><is><t>Medium (Data/Voice)</t></is></c><c t="inlineStr"><is><t>LLDP Voice VLAN 30</t></is></c></row>
+    <row r="3"><c t="inlineStr"><is><t>CTL-AC-01</t></is></c><c t="inlineStr"><is><t>Controladora</t></is></c><c t="inlineStr"><is><t>Hikvision</t></is></c><c t="inlineStr"><is><t>SALA TÉCNICA</t></is></c><c t="inlineStr"><is><t>10.10.20.10</t></is></c><c t="inlineStr"><is><t>20</t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t>Medium</t></is></c><c t="inlineStr"><is><t>ACLs inter-VLAN</t></is></c></row>
+    <row r="4"><c t="inlineStr"><is><t>LDR-AC-01</t></is></c><c t="inlineStr"><is><t>Leitor</t></is></c><c t="inlineStr"><is><t>Hikvision</t></is></c><c t="inlineStr"><is><t>TORRE 1</t></is></c><c t="inlineStr"><is><t>10.10.20.80</t></is></c><c t="inlineStr"><is><t>20</t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t>Medium</t></is></c><c t="inlineStr"><is><t>PVID 20</t></is></c></row>
+    <row r="5"><c t="inlineStr"><is><t>...</t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t></t></is></c><c t="inlineStr"><is><t>Preencher FAC-002..FAC-032 e demais controladoras/leitores</t></is></c></row>
+  </sheetData>
+</worksheet>

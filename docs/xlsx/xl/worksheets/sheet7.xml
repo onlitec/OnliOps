@@ -1,0 +1,14 @@
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c t="inlineStr"><is><t>Switch</t></is></c>
+      <c t="inlineStr"><is><t>Porta</t></is></c>
+      <c t="inlineStr"><is><t>TAG</t></is></c>
+      <c t="inlineStr"><is><t>VLAN</t></is></c>
+      <c t="inlineStr"><is><t>PoE</t></is></c>
+      <c t="inlineStr"><is><t>Observações</t></is></c>
+    </row>
+    <row r="2"><c t="inlineStr"><is><t>DS-3E1526P-EI</t></is></c><c t="inlineStr"><is><t>Gi1/0/3</t></is></c><c t="inlineStr"><is><t>CA-001</t></is></c><c t="inlineStr"><is><t>10</t></is></c><c t="inlineStr"><is><t>On</t></is></c><c t="inlineStr"><is><t>Trunk 10,20,30,99; PVID 10</t></is></c></row>
+    <row r="3"><c t="inlineStr"><is><t>DS-3E1309P-EI</t></is></c><c t="inlineStr"><is><t>Gi0/8</t></is></c><c t="inlineStr"><is><t>CA-010</t></is></c><c t="inlineStr"><is><t>10</t></is></c><c t="inlineStr"><is><t>On</t></is></c><c t="inlineStr"><is><t>Hybrid; QoS trust DSCP</t></is></c></row>
+  </sheetData>
+</worksheet>

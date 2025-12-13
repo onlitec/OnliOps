@@ -1,0 +1,41 @@
+{
+  "sessionId": "1765626131458",
+  "filePath": "/opt/calabasas/server/uploads/1765626131458-959744907-SWITCHES-CALABASAS.xlsx",
+  "fileName": "SWITCHES-CALABASAS.xlsx",
+  "sheets": [
+    {
+      "name": "Planilha1",
+      "headers": [
+        "SWITCH - IP E SENHA"
+      ],
+      "headerRowIndex": 0,
+      "rowCount": 9,
+      "sampleRows": [
+        {
+          "SWITCH - IP E SENHA": 1
+        },
+        {
+          "SWITCH - IP E SENHA": 2
+        },
+        {
+          "SWITCH - IP E SENHA": 3
+        }
+      ],
+      "autoMapping": {
+        "ip_address": null,
+        "serial_number": null,
+        "model": null,
+        "manufacturer": null,
+        "hostname": null,
+        "mac_address": null,
+        "location": null,
+        "status": null,
+        "description": null
+      },
+      "aiSuggestion": null,
+      "isDeviceSheet": false
+    }
+  ],
+  "uploadedAt": "2025-12-13T11:44:11.952Z",
+  "projectId": "83f6bbd9-02c9-4688-abdf-6fce082d6368"
+}

@@ -1,0 +1,56 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title>Documentação Técnica – Projeto Calabasas</title>
+</head>
+<body>
+<h2>Análise SWOT</h2>
+<table border="1" cellpadding="6" cellspacing="0">
+  <tr><th>Forças</th><th>Fraquezas</th><th>Oportunidades</th><th>Ameaças</th></tr>
+  <tr>
+    <td>Segmentação por VLANs clara para Management, Data, Voice, CFTV, Access, IoT, Guest</td>
+    <td>Dependência central do HikCentral na VLAN 20</td>
+    <td>Expansão de IoT e integração com elevadores e portaria</td>
+    <td>Falhas de rede podem impactar múltiplos módulos simultaneamente</td>
+  </tr>
+  <tr>
+    <td>Padrões de endereçamento definidos</td>
+    <td>Possível ausência de QoS detalhada para Voice e vídeo</td>
+    <td>Melhorias de segurança com 802.1X e ACLs</td>
+    <td>Ataques internos em redes convidadas se mal isoladas</td>
+  </tr>
+</table>
+
+<h2>Recomendações de Otimização</h2>
+<table border="1" cellpadding="6" cellspacing="0">
+  <tr><th>Tópico</th><th>Recomendação</th><th>Benefício</th></tr>
+  <tr><td>QoS</td><td>Classificar tráfego Voice (EF) e vídeo CFTV (AF41), priorizar filas</td><td>Menor latência e jitter</td></tr>
+  <tr><td>Segurança</td><td>Implementar 802.1X, VLAN de quarentena, ACLs entre VLANs</td><td>Redução de superfície de ataque</td></tr>
+  <tr><td>Resiliência</td><td>HikCentral em cluster e backup, UPS segmentado</td><td>Alta disponibilidade</td></tr>
+  <tr><td>Endereçamento</td><td>Reservar blocos estáticos por módulo e DHCP por VLAN</td><td>Gestão simplificada</td></tr>
+  <tr><td>Monitoramento</td><td>SNMP e Syslog por VLAN com dashboards</td><td>Detecção precoce de falhas</td></tr>
+</table>
+
+<h2>Cronograma Detalhado</h2>
+<table border="1" cellpadding="6" cellspacing="0">
+  <tr><th>Fase</th><th>Atividades</th><th>Responsável</th><th>Duração</th><th>Predecessoras</th></tr>
+  <tr><td>Planejamento</td><td>Inventário, validação de VLANs, endereçamento</td><td>Rede</td><td>5 dias</td><td>-</td></tr>
+  <tr><td>Infraestrutura</td><td>Configuração de switches, ACLs, QoS</td><td>Rede</td><td>7 dias</td><td>Planejamento</td></tr>
+  <tr><td>Servidores</td><td>Instalação/cluster HikCentral</td><td>TI</td><td>4 dias</td><td>Infraestrutura</td></tr>
+  <tr><td>Dispositivos</td><td>Provisionar câmeras, leitores, controladoras</td><td>Campo</td><td>10 dias</td><td>Servidores</td></tr>
+  <tr><td>Integrações</td><td>Elevadores, portaria, portões</td><td>Campo</td><td>5 dias</td><td>Dispositivos</td></tr>
+  <tr><td>Validação</td><td>Testes e ajustes finais</td><td>Qualidade</td><td>3 dias</td><td>Integrações</td></tr>
+</table>
+
+<h2>Lista de Equipamentos</h2>
+<table border="1" cellpadding="6" cellspacing="0">
+  <tr><th>Categoria</th><th>Modelo</th><th>VLAN</th><th>IP</th><th>Local</th></tr>
+  <tr><td>Câmera</td><td>DS-2CD2T46G2H-2I</td><td>40</td><td>10.10.40.51</td><td>Portão Pedestre Torre 1</td></tr>
+  <tr><td>Câmera</td><td>DS-2CD2T46G2H-2I</td><td>40</td><td>10.10.40.52</td><td>Vista Direita 1</td></tr>
+  <tr><td>Servidor</td><td>HikCentral</td><td>20</td><td>10.10.20.10</td><td>Datacenter</td></tr>
+  <tr><td>Leitor Facial</td><td>Hikvision Face Reader</td><td>50</td><td>DHCP</td><td>Elevadores</td></tr>
+  <tr><td>Controladora</td><td>Hikvision Controller</td><td>50</td><td>DHCP</td><td>AC Sala Técnica</td></tr>
+</table>
+
+</body>
+</html>

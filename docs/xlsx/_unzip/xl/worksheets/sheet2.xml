@@ -1,0 +1,32 @@
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c t="inlineStr"><is><t>VLAN ID</t></is></c>
+      <c t="inlineStr"><is><t>Descrição</t></is></c>
+      <c t="inlineStr"><is><t>Sub-rede</t></is></c>
+      <c t="inlineStr"><is><t>Máscara</t></is></c>
+      <c t="inlineStr"><is><t>Gateway</t></is></c>
+      <c t="inlineStr"><is><t>Dispositivos</t></is></c>
+      <c t="inlineStr"><is><t>Políticas de Segurança</t></is></c>
+      <c t="inlineStr"><is><t>QoS DSCP</t></is></c>
+      <c t="inlineStr"><is><t>QoS 802.1p</t></is></c>
+      <c t="inlineStr"><is><t>Prioridade</t></is></c>
+      <c t="inlineStr"><is><t>Roteamento</t></is></c>
+      <c t="inlineStr"><is><t>Observações</t></is></c>
+    </row>
+    <row r="2">
+      <c t="inlineStr"><is><t>20</t></is></c>
+      <c t="inlineStr"><is><t>Dados (eventos/logs)</t></is></c>
+      <c t="inlineStr"><is><t>10.10.20.0/24</t></is></c>
+      <c t="inlineStr"><is><t>255.255.255.0</t></is></c>
+      <c t="inlineStr"><is><t>10.10.20.1</t></is></c>
+      <c t="inlineStr"><is><t>Faciais, Controladoras, Leitores</t></is></c>
+      <c t="inlineStr"><is><t>802.1X; ACLs inter-VLAN</t></is></c>
+      <c t="inlineStr"><is><t>AF31/CS0</t></is></c>
+      <c t="inlineStr"><is><t>3–5</t></is></c>
+      <c t="inlineStr"><is><t>Medium</t></is></c>
+      <c t="inlineStr"><is><t>20→10, 20↔30, 20→99 restrito</t></is></c>
+      <c t="inlineStr"><is><t>Faciais com Voz em 30 e Vídeo em 10</t></is></c>
+    </row>
+  </sheetData>
+</worksheet>
