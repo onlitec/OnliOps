@@ -3,3 +3,4 @@ dist/
 .env
 BKP/
 .DS_Store
+*.zip
