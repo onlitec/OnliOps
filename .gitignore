@@ -4,3 +4,4 @@ dist/
 BKP/
 .DS_Store
 *.zip
+.env.production
