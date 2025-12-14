@@ -10,9 +10,18 @@ import {
     Select,
     MenuItem,
     Alert,
-    TextField
+    TextField,
+    Slider,
+    IconButton,
+    Divider
 } from '@mui/material'
-import { Save as SaveIcon, Palette as PaletteIcon } from '@mui/icons-material'
+import {
+    Save as SaveIcon,
+    Palette as PaletteIcon,
+    TextFields as TextFieldsIcon,
+    Add as AddIcon,
+    Remove as RemoveIcon
+} from '@mui/icons-material'
 import { api } from '../../services/api'
 import { useThemeMode } from '../../context/ThemeContext'
 
@@ -26,8 +35,15 @@ const THEME_COLORS = [
     { name: 'Índigo', value: '#6366f1' }
 ]
 
+const FONT_SCALE_OPTIONS = [
+    { value: 'small', label: 'Pequeno', description: 'Textos compactos' },
+    { value: 'medium', label: 'Médio', description: 'Tamanho padrão' },
+    { value: 'large', label: 'Grande', description: 'Textos maiores' },
+    { value: 'xlarge', label: 'Extra Grande', description: 'Máxima legibilidade' }
+]
+
 export default function AppearanceSettings() {
-    const { mode, setMode } = useThemeMode()
+    const { mode, setMode, fontScale, setFontScale } = useThemeMode()
     const [settings, setSettings] = useState({
         theme_mode: mode,
         primary_color: '#3b82f6',
@@ -64,6 +80,24 @@ export default function AppearanceSettings() {
         setSettings({ ...settings, theme_mode: newMode })
         // Apply immediately
         setMode(newMode)
+    }
+
+    const handleFontScaleChange = (newScale: 'small' | 'medium' | 'large' | 'xlarge') => {
+        setFontScale(newScale)
+    }
+
+    const fontScaleIndex = FONT_SCALE_OPTIONS.findIndex(opt => opt.value === fontScale)
+
+    const handleFontSizeIncrease = () => {
+        if (fontScaleIndex < FONT_SCALE_OPTIONS.length - 1) {
+            handleFontScaleChange(FONT_SCALE_OPTIONS[fontScaleIndex + 1].value as any)
+        }
+    }
+
+    const handleFontSizeDecrease = () => {
+        if (fontScaleIndex > 0) {
+            handleFontScaleChange(FONT_SCALE_OPTIONS[fontScaleIndex - 1].value as any)
+        }
     }
 
     const handleSave = async () => {
@@ -188,6 +222,107 @@ export default function AppearanceSettings() {
                             </Typography>
                         </Box>
 
+                        <Divider sx={{ my: 1 }} />
+
+                        {/* Font Size Control */}
+                        <Box>
+                            <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                                <Box
+                                    sx={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 2,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        boxShadow: '0 4px 14px rgba(99, 102, 241, 0.25)',
+                                    }}
+                                >
+                                    <TextFieldsIcon sx={{ color: 'white', fontSize: 20 }} />
+                                </Box>
+                                <Box>
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        Tamanho da Fonte
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Ajuste o tamanho dos textos da plataforma
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    p: 2,
+                                    borderRadius: 2,
+                                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                                }}
+                            >
+                                <IconButton
+                                    onClick={handleFontSizeDecrease}
+                                    disabled={fontScaleIndex === 0}
+                                    sx={{
+                                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                        '&:hover': {
+                                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                        },
+                                    }}
+                                >
+                                    <RemoveIcon />
+                                </IconButton>
+
+                                <Box sx={{ flex: 1, px: 2 }}>
+                                    <Slider
+                                        value={fontScaleIndex}
+                                        min={0}
+                                        max={FONT_SCALE_OPTIONS.length - 1}
+                                        step={1}
+                                        marks={FONT_SCALE_OPTIONS.map((opt, i) => ({
+                                            value: i,
+                                            label: opt.label
+                                        }))}
+                                        onChange={(_, value) => handleFontScaleChange(FONT_SCALE_OPTIONS[value as number].value as any)}
+                                        sx={{
+                                            '& .MuiSlider-markLabel': {
+                                                fontSize: '0.7rem',
+                                            },
+                                        }}
+                                    />
+                                </Box>
+
+                                <IconButton
+                                    onClick={handleFontSizeIncrease}
+                                    disabled={fontScaleIndex === FONT_SCALE_OPTIONS.length - 1}
+                                    sx={{
+                                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                        '&:hover': {
+                                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                                        },
+                                    }}
+                                >
+                                    <AddIcon />
+                                </IconButton>
+                            </Box>
+
+                            <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}>
+                                <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+                                    Pré-visualização:
+                                </Typography>
+                                <Typography variant="body1">
+                                    Este é um exemplo de texto com o tamanho "{FONT_SCALE_OPTIONS[fontScaleIndex]?.label}".
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" mt={0.5}>
+                                    {FONT_SCALE_OPTIONS[fontScaleIndex]?.description}
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        <Divider sx={{ my: 1 }} />
+
                         <TextField
                             label="URL do Logo (opcional)"
                             value={settings.logo_url}
@@ -220,3 +355,4 @@ export default function AppearanceSettings() {
         </Box>
     )
 }
+

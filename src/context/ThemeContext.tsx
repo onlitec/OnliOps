@@ -4,11 +4,14 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { SnackbarProvider } from 'notistack'
 
 type ThemeMode = 'light' | 'dark' | 'auto'
+type FontScale = 'small' | 'medium' | 'large' | 'xlarge'
 
 interface ThemeContextType {
     mode: ThemeMode
     setMode: (mode: ThemeMode) => void
     effectiveMode: 'light' | 'dark'
+    fontScale: FontScale
+    setFontScale: (scale: FontScale) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -19,6 +22,14 @@ export function useThemeMode() {
         throw new Error('useThemeMode must be used within ThemeContextProvider')
     }
     return context
+}
+
+// Font scale configurations
+const fontScaleConfig: Record<FontScale, number> = {
+    small: 12,
+    medium: 14, // Default
+    large: 16,
+    xlarge: 18,
 }
 
 function getSystemPreference(): 'light' | 'dark' {
@@ -83,6 +94,14 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
         return 'dark' // Default to dark for technical UI
     })
 
+    const [fontScale, setFontScale] = useState<FontScale>(() => {
+        const saved = localStorage.getItem('fontScale')
+        if (saved && ['small', 'medium', 'large', 'xlarge'].includes(saved)) {
+            return saved as FontScale
+        }
+        return 'medium' // Default
+    })
+
     const [systemPreference, setSystemPreference] = useState<'light' | 'dark'>(getSystemPreference)
 
     useEffect(() => {
@@ -104,6 +123,13 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         localStorage.setItem('themeMode', mode)
     }, [mode])
+
+    useEffect(() => {
+        localStorage.setItem('fontScale', fontScale)
+    }, [fontScale])
+
+    // Calculate font sizes based on scale
+    const baseFontSize = fontScaleConfig[fontScale]
 
     const theme = useMemo(() => createTheme({
         palette: {
@@ -138,18 +164,18 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
         },
         typography: {
             fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            fontSize: 13, // Reduced from default 14
+            fontSize: baseFontSize,
             htmlFontSize: 16,
-            h1: { fontSize: '1.75rem', fontWeight: 600, lineHeight: 1.2 },
-            h2: { fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.3 },
-            h3: { fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.4 },
-            h4: { fontSize: '1.1rem', fontWeight: 600, lineHeight: 1.4 },
-            h5: { fontSize: '1rem', fontWeight: 600, lineHeight: 1.4 },
-            h6: { fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.4 },
-            body1: { fontSize: '0.8125rem', lineHeight: 1.5 }, // 13px
-            body2: { fontSize: '0.75rem', lineHeight: 1.5 },   // 12px
-            caption: { fontSize: '0.6875rem', lineHeight: 1.4 }, // 11px
-            button: { fontSize: '0.8125rem', fontWeight: 500, textTransform: 'none' as const },
+            h1: { fontSize: `${baseFontSize * 1.75 / 14}rem`, fontWeight: 600, lineHeight: 1.2 },
+            h2: { fontSize: `${baseFontSize * 1.5 / 14}rem`, fontWeight: 600, lineHeight: 1.3 },
+            h3: { fontSize: `${baseFontSize * 1.25 / 14}rem`, fontWeight: 600, lineHeight: 1.4 },
+            h4: { fontSize: `${baseFontSize * 1.1 / 14}rem`, fontWeight: 600, lineHeight: 1.4 },
+            h5: { fontSize: `${baseFontSize / 14}rem`, fontWeight: 600, lineHeight: 1.4 },
+            h6: { fontSize: `${baseFontSize * 0.875 / 14}rem`, fontWeight: 600, lineHeight: 1.4 },
+            body1: { fontSize: `${baseFontSize / 16}rem`, lineHeight: 1.5 },
+            body2: { fontSize: `${(baseFontSize - 2) / 16}rem`, lineHeight: 1.5 },
+            caption: { fontSize: `${(baseFontSize - 3) / 16}rem`, lineHeight: 1.4 },
+            button: { fontSize: `${baseFontSize / 16}rem`, fontWeight: 500, textTransform: 'none' as const },
         },
         shape: {
             borderRadius: 6, // Reduced from 12 - more technical look
@@ -510,10 +536,10 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
                 },
             },
         },
-    }), [effectiveMode])
+    }), [effectiveMode, baseFontSize])
 
     return (
-        <ThemeContext.Provider value={{ mode, setMode, effectiveMode }}>
+        <ThemeContext.Provider value={{ mode, setMode, effectiveMode, fontScale, setFontScale }}>
             <MUIThemeProvider theme={theme}>
                 <CssBaseline />
                 <SnackbarProvider
