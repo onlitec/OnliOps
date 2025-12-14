@@ -332,14 +332,19 @@ export default function UserManagement() {
                             <AccordionDetails>
                                 <Typography variant="subtitle2" gutterBottom>Permissões:</Typography>
                                 <Box display="flex" flexWrap="wrap" gap={1}>
-                                    {Object.entries(role.permissions || {}).map(([resource, actions]) => (
-                                        <Chip
-                                            key={resource}
-                                            label={`${resource}: ${(actions as string[]).join(', ')}`}
-                                            size="small"
-                                            variant="outlined"
-                                        />
-                                    ))}
+                                    {Object.entries(role.permissions || {}).map(([resource, actions]) => {
+                                        // Ensure actions is an array before calling join
+                                        const actionsArray = Array.isArray(actions) ? actions :
+                                            (typeof actions === 'string' ? [actions] : Object.keys(actions || {}))
+                                        return (
+                                            <Chip
+                                                key={resource}
+                                                label={`${resource}: ${actionsArray.join(', ')}`}
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        )
+                                    })}
                                 </Box>
                             </AccordionDetails>
                         </Accordion>
