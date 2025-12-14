@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -25,7 +25,8 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon,
   Edit as EditIcon,
-  Check as CheckIcon
+  Check as CheckIcon,
+  ArrowBack as ArrowBackIcon
 } from '@mui/icons-material'
 import { useAppSelector } from '../store/hooks'
 import { api } from '../services/api'
@@ -54,6 +55,7 @@ export default function Profile() {
   const { user } = useAppSelector((state) => state.auth)
   const { enqueueSnackbar } = useSnackbar()
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [tabValue, setTabValue] = useState(0)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -161,23 +163,35 @@ export default function Profile() {
 
   return (
     <Box>
-      <Box mb={4}>
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            mb: 1,
-          }}
-        >
-          {isEditingOther ? `Editar Perfil: ${profile.name || profile.email}` : 'Meu Perfil'}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {isEditingOther ? 'Edite as informações do usuário selecionado' : 'Gerencie suas informações pessoais e segurança'}
-        </Typography>
+      <Box mb={4} display="flex" justifyContent="space-between" alignItems="flex-start">
+        <Box>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              mb: 1,
+            }}
+          >
+            {isEditingOther ? `Editar Perfil: ${profile.name || profile.email}` : 'Meu Perfil'}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {isEditingOther ? 'Edite as informações do usuário selecionado' : 'Gerencie suas informações pessoais e segurança'}
+          </Typography>
+        </Box>
+        {isEditingOther && (
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/settings/users')}
+            sx={{ ml: 2 }}
+          >
+            Voltar
+          </Button>
+        )}
       </Box>
 
       {/* Profile Header Card */}

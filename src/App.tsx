@@ -11,7 +11,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store";
 import { checkAuth } from "@/store/slices/authSlice";
 import RegisterForm from "@/components/auth/RegisterForm";
-import UserProfile from "@/components/auth/UserProfile";
+import Profile from "@/pages/Profile";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import MainLayout from "@/components/MainLayout";
 import CategoryManager from "@/pages/CategoryManager";
@@ -52,7 +52,7 @@ function AppInner() {
         <Route path="devices/:category" element={<DeviceList />} />
         <Route path="vlans" element={<VlanManager />} />
         <Route path="topology" element={<Topology />} />
-        <Route path="profile" element={<UserProfile />} />
+        <Route path="profile" element={<Profile />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/categories" element={<CategoryManager />} />
         <Route path="settings/users" element={<UserManagement />} />
