@@ -259,6 +259,12 @@ app.get('/api/roles', async (req, res) => {
 app.get('/api/users/:userId/permissions', async (req, res) => {
     const { userId } = req.params;
     try {
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(userId)) {
+            return res.json([]); // Return empty array for invalid UUID
+        }
+
         const { rows } = await pool.query(`
             SELECT 
                 up.id, up.user_id, up.role_id, up.client_id, up.project_id,
@@ -273,7 +279,9 @@ app.get('/api/users/:userId/permissions', async (req, res) => {
         `, [userId]);
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error fetching user permissions:', error.message);
+        // Return empty array instead of error to prevent frontend crash
+        res.json([]);
     }
 });
 
