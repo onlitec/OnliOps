@@ -97,7 +97,7 @@ export default function Profile() {
       console.error('Error loading profile:', error)
       // Use local user data if API fails
       setProfile({
-        name: user.name || user.full_name || '',
+        name: user.name || '',
         email: user.email || '',
         phone: '',
         avatar_url: ''
