@@ -1,38 +1,11 @@
 # ============================================
-# OnliOps - Docker Compose (Production)
+# OnliOps - Docker Compose (Coolify Deploy)
 # ============================================
-# Usage:
-#   docker compose up -d --build
-#   docker compose logs -f
-#   docker compose down
+# This configuration is optimized for Coolify deployment
+# Coolify will manage the database separately
 # ============================================
 
 services:
-  # ==========================================
-  # PostgreSQL Database
-  # ==========================================
-  database:
-    image: postgres:15-alpine
-    container_name: onliops-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER:-onliops}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
-      POSTGRES_DB: ${DB_NAME:-onliops}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      # Optional: Initialize with migrations
-      # - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-onliops}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - onliops-network
-
   # ==========================================
   # Node.js Backend API
   # ==========================================
@@ -42,23 +15,30 @@ services:
       dockerfile: Dockerfile.backend
     container_name: onliops-api
     restart: unless-stopped
-    depends_on:
-      database:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgres://${DB_USER:-onliops}:${DB_PASSWORD:-changeme}@database:5432/${DB_NAME:-onliops}
-      DB_HOST: database
-      DB_PORT: 5432
-      DB_USER: ${DB_USER:-onliops}
-      DB_PASSWORD: ${DB_PASSWORD:-changeme}
-      DB_NAME: ${DB_NAME:-onliops}
+      # Database - configured via Coolify environment variables
+      DATABASE_URL: ${DATABASE_URL}
+      PGHOST: ${PGHOST}
+      PGPORT: ${PGPORT:-5432}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      PGDATABASE: ${PGDATABASE}
+      # AI Services
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
     volumes:
       - uploads_data:/app/uploads
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - onliops-network
 
@@ -69,12 +49,23 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL:-/api}
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-}
     container_name: onliops-web
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
-      - "80:80"
+      - "3000:80"
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     networks:
       - onliops-network
 
@@ -82,8 +73,6 @@ services:
 # Volumes (Persistent Data)
 # ==========================================
 volumes:
-  postgres_data:
-    name: onliops-postgres-data
   uploads_data:
     name: onliops-uploads
 
