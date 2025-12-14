@@ -769,6 +769,91 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 })
 
+// === USER PROFILE ENDPOINTS ===
+
+// Get user profile
+app.get('/api/profile/:userId', async (req, res) => {
+    const { userId } = req.params
+    try {
+        const { rows } = await pool.query(
+            `SELECT id, email, name, phone, avatar_url, role, created_at, last_login 
+             FROM users WHERE id = $1`,
+            [userId]
+        )
+        if (rows.length === 0) return res.status(404).json({ error: 'User not found' })
+        res.json(rows[0])
+    } catch (error) {
+        console.error('Error fetching profile:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Update user profile (name, email, phone)
+app.put('/api/profile/:userId', async (req, res) => {
+    const { userId } = req.params
+    const { name, email, phone, avatar_url } = req.body
+    try {
+        const { rows } = await pool.query(
+            `UPDATE users SET 
+                name = COALESCE($1, name), 
+                email = COALESCE($2, email), 
+                phone = $3, 
+                avatar_url = $4,
+                updated_at = NOW()
+             WHERE id = $5 
+             RETURNING id, email, name, phone, avatar_url, role`,
+            [name, email, phone, avatar_url, userId]
+        )
+        if (rows.length === 0) return res.status(404).json({ error: 'User not found' })
+        res.json(rows[0])
+    } catch (error) {
+        console.error('Error updating profile:', error)
+        if (error.code === '23505') {
+            return res.status(400).json({ error: 'Este email já está em uso' })
+        }
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Change password
+app.put('/api/profile/:userId/password', async (req, res) => {
+    const { userId } = req.params
+    const { currentPassword, newPassword } = req.body
+
+    try {
+        // For local auth, we use a simple comparison
+        // In production, use bcrypt
+        const { rows } = await pool.query(
+            'SELECT password_hash FROM users WHERE id = $1',
+            [userId]
+        )
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Usuário não encontrado' })
+        }
+
+        const user = rows[0]
+
+        // If password_hash is null, allow setting new password
+        // Otherwise, verify current password
+        if (user.password_hash && user.password_hash !== currentPassword) {
+            // Simple comparison for now - in production use bcrypt.compare
+            return res.status(400).json({ error: 'Senha atual incorreta' })
+        }
+
+        // Update password
+        await pool.query(
+            'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+            [newPassword, userId]
+        )
+
+        res.json({ message: 'Senha alterada com sucesso' })
+    } catch (error) {
+        console.error('Error changing password:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
 // === SETTINGS ENDPOINTS ===
 
 // Get all settings

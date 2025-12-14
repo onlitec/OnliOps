@@ -282,6 +282,39 @@ export const api = {
         if (!response.ok) throw new Error('Failed to delete user')
     },
 
+    // === User Profile ===
+    getProfile: async (userId: string): Promise<any> => {
+        const response = await fetch(`${API_BASE}/profile/${userId}`)
+        if (!response.ok) throw new Error('Failed to fetch profile')
+        return response.json()
+    },
+
+    updateProfile: async (userId: string, data: { name?: string; email?: string; phone?: string; avatar_url?: string }): Promise<any> => {
+        const response = await fetch(`${API_BASE}/profile/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to update profile')
+        }
+        return response.json()
+    },
+
+    changePassword: async (userId: string, currentPassword: string, newPassword: string): Promise<any> => {
+        const response = await fetch(`${API_BASE}/profile/${userId}/password`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPassword, newPassword })
+        })
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to change password')
+        }
+        return response.json()
+    },
+
     // Settings (Global)
     getSettings: async (): Promise<any> => {
         const response = await fetch(`${API_BASE}/settings`)
