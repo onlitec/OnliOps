@@ -10,11 +10,11 @@ app.use(cors())
 app.use(express.json({ limit: '50mb' }))
 
 const pool = new Pool({
-    host: '127.0.0.1',
-    port: 5432,
-    database: 'calabasas_local',
-    user: 'calabasas_admin',
-    password: 'Calabasas@2025!'
+    host: process.env.PGHOST || '127.0.0.1',
+    port: parseInt(process.env.PGPORT) || 5432,
+    database: process.env.PGDATABASE || 'calabasas_local',
+    user: process.env.PGUSER || 'calabasas_admin',
+    password: process.env.PGPASSWORD || 'Calabasas@2025!'
 })
 
 // === MULTI-TENANCY MIDDLEWARE ===

@@ -1,18 +1,18 @@
 # ============================================
 # OnliOps Backend (Node.js API)
 # ============================================
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies for native modules (if any)
-RUN apk add --no-cache python3 make g++
+# Install dependencies for native modules
+RUN apk add --no-cache python3 make g++ wget
 
-# Copy package files
+# Copy package files from server directory
 COPY server/package*.json ./
 
-# Install production dependencies only
-RUN npm ci --only=production
+# Install production dependencies
+RUN npm ci --only=production 2>/dev/null || npm install --only=production
 
 # Copy server source code
 COPY server/ ./
