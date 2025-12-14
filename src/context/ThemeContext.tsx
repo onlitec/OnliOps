@@ -165,17 +165,17 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
         typography: {
             fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             fontSize: baseFontSize,
-            htmlFontSize: 16,
-            h1: { fontSize: `${baseFontSize * 1.75 / 14}rem`, fontWeight: 600, lineHeight: 1.2 },
-            h2: { fontSize: `${baseFontSize * 1.5 / 14}rem`, fontWeight: 600, lineHeight: 1.3 },
-            h3: { fontSize: `${baseFontSize * 1.25 / 14}rem`, fontWeight: 600, lineHeight: 1.4 },
-            h4: { fontSize: `${baseFontSize * 1.1 / 14}rem`, fontWeight: 600, lineHeight: 1.4 },
-            h5: { fontSize: `${baseFontSize / 14}rem`, fontWeight: 600, lineHeight: 1.4 },
-            h6: { fontSize: `${baseFontSize * 0.875 / 14}rem`, fontWeight: 600, lineHeight: 1.4 },
-            body1: { fontSize: `${baseFontSize / 16}rem`, lineHeight: 1.5 },
-            body2: { fontSize: `${(baseFontSize - 2) / 16}rem`, lineHeight: 1.5 },
-            caption: { fontSize: `${(baseFontSize - 3) / 16}rem`, lineHeight: 1.4 },
-            button: { fontSize: `${baseFontSize / 16}rem`, fontWeight: 500, textTransform: 'none' as const },
+            htmlFontSize: baseFontSize,
+            h1: { fontSize: '2.25rem', fontWeight: 600, lineHeight: 1.2 },
+            h2: { fontSize: '1.875rem', fontWeight: 600, lineHeight: 1.3 },
+            h3: { fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.4 },
+            h4: { fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.4 },
+            h5: { fontSize: '1.125rem', fontWeight: 600, lineHeight: 1.4 },
+            h6: { fontSize: '1rem', fontWeight: 600, lineHeight: 1.4 },
+            body1: { fontSize: '1rem', lineHeight: 1.5 },
+            body2: { fontSize: '0.875rem', lineHeight: 1.5 },
+            caption: { fontSize: '0.75rem', lineHeight: 1.4 },
+            button: { fontSize: '0.875rem', fontWeight: 500, textTransform: 'none' as const },
         },
         shape: {
             borderRadius: 6, // Reduced from 12 - more technical look
@@ -193,7 +193,11 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
         components: {
             MuiCssBaseline: {
                 styleOverrides: {
+                    html: {
+                        fontSize: `${baseFontSize}px`,
+                    },
                     body: {
+                        fontSize: `${baseFontSize}px`,
                         scrollbarWidth: 'thin',
                         '&::-webkit-scrollbar': {
                             width: '6px',
