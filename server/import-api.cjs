@@ -5,6 +5,9 @@ const cors = require('cors')
 // AI Integration
 const aiRoutes = require('./routes/ai.cjs')
 
+// Database initialization
+const { initializeDatabase } = require('./utils/db-init.cjs')
+
 const app = express()
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
@@ -15,6 +18,15 @@ const pool = new Pool({
     database: process.env.PGDATABASE || 'calabasas_local',
     user: process.env.PGUSER || 'calabasas_admin',
     password: process.env.PGPASSWORD || 'Calabasas@2025!'
+})
+
+// Initialize database on startup
+initializeDatabase(pool).then(success => {
+    if (success) {
+        console.log('[DB] Database ready for connections');
+    } else {
+        console.error('[DB] Database initialization failed - some features may not work');
+    }
 })
 
 // === MULTI-TENANCY MIDDLEWARE ===
