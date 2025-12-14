@@ -8,6 +8,10 @@ const aiRoutes = require('./routes/ai.cjs')
 // Database initialization
 const { initializeDatabase } = require('./utils/db-init.cjs')
 
+// Crypto and Telegram modules
+const { encrypt, decrypt, isEncrypted } = require('./utils/crypto.cjs')
+const telegram = require('./utils/telegram.cjs')
+
 const app = express()
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
@@ -850,6 +854,268 @@ app.put('/api/profile/:userId/password', async (req, res) => {
         res.json({ message: 'Senha alterada com sucesso' })
     } catch (error) {
         console.error('Error changing password:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === TELEGRAM ENDPOINTS ===
+
+// Start Telegram link process
+app.post('/api/telegram/start-link', async (req, res) => {
+    const { userId } = req.body
+
+    if (!userId) {
+        return res.status(400).json({ error: 'userId is required' })
+    }
+
+    try {
+        // Generate verification code
+        const code = telegram.generateVerificationCode()
+        telegram.storeVerificationCode(userId, code)
+
+        console.log(`[Telegram] Verification code generated for user ${userId}: ${code}`)
+
+        res.json({
+            verificationCode: code,
+            expiresIn: 600 // 10 minutes
+        })
+    } catch (error) {
+        console.error('Error starting Telegram link:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Verify Telegram code and save chat_id
+app.post('/api/telegram/verify', async (req, res) => {
+    const { userId, code, chatId } = req.body
+
+    if (!userId || !code || !chatId) {
+        return res.status(400).json({ error: 'userId, code, and chatId are required' })
+    }
+
+    try {
+        // Verify the code
+        const isValid = telegram.verifyCode(userId, code)
+
+        if (!isValid) {
+            return res.status(400).json({ error: 'Código inválido ou expirado' })
+        }
+
+        // Save chat_id to user
+        await pool.query(
+            'UPDATE users SET telegram_chat_id = $1, telegram_verified = true, updated_at = NOW() WHERE id = $2',
+            [chatId, userId]
+        )
+
+        // Send confirmation message
+        await telegram.sendMessage(chatId, '✅ <b>Conta vinculada com sucesso!</b>\n\nAgora você receberá senhas de dispositivos diretamente aqui.')
+
+        console.log(`[Telegram] User ${userId} linked to chat ${chatId}`)
+
+        res.json({ success: true, message: 'Telegram vinculado com sucesso' })
+    } catch (error) {
+        console.error('Error verifying Telegram:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Manually link Telegram (for testing/admin)
+app.put('/api/telegram/link/:userId', async (req, res) => {
+    const { userId } = req.params
+    const { chatId } = req.body
+
+    if (!chatId) {
+        return res.status(400).json({ error: 'chatId is required' })
+    }
+
+    try {
+        await pool.query(
+            'UPDATE users SET telegram_chat_id = $1, telegram_verified = true, updated_at = NOW() WHERE id = $2',
+            [chatId, userId]
+        )
+
+        res.json({ success: true })
+    } catch (error) {
+        console.error('Error linking Telegram:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Unlink Telegram
+app.delete('/api/telegram/unlink/:userId', async (req, res) => {
+    const { userId } = req.params
+
+    try {
+        await pool.query(
+            'UPDATE users SET telegram_chat_id = NULL, telegram_verified = false, updated_at = NOW() WHERE id = $1',
+            [userId]
+        )
+
+        res.json({ success: true, message: 'Telegram desvinculado' })
+    } catch (error) {
+        console.error('Error unlinking Telegram:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Get Telegram status for user
+app.get('/api/telegram/status/:userId', async (req, res) => {
+    const { userId } = req.params
+
+    try {
+        const { rows } = await pool.query(
+            'SELECT telegram_chat_id, telegram_verified FROM users WHERE id = $1',
+            [userId]
+        )
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' })
+        }
+
+        res.json({
+            linked: !!rows[0].telegram_chat_id,
+            verified: rows[0].telegram_verified || false
+        })
+    } catch (error) {
+        console.error('Error getting Telegram status:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === DEVICE CREDENTIALS ENDPOINTS ===
+
+// Save device credentials (encrypted)
+app.put('/api/devices/:id/credentials', async (req, res) => {
+    const { id } = req.params
+    const { admin_username, admin_password } = req.body
+
+    try {
+        // Encrypt password if provided
+        let encryptedPassword = null
+        if (admin_password) {
+            encryptedPassword = encrypt(admin_password)
+        }
+
+        await pool.query(
+            `UPDATE network_devices 
+             SET admin_username = $1, admin_password_enc = $2, updated_at = NOW() 
+             WHERE id = $3`,
+            [admin_username, encryptedPassword, id]
+        )
+
+        console.log(`[Credentials] Saved credentials for device ${id}`)
+
+        res.json({ success: true, message: 'Credenciais salvas com sucesso' })
+    } catch (error) {
+        console.error('Error saving credentials:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Request device password (send via Telegram)
+app.post('/api/devices/:id/request-password', async (req, res) => {
+    const { id } = req.params
+    const { userId } = req.body
+    const ipAddress = req.ip || req.connection.remoteAddress
+    const userAgent = req.headers['user-agent']
+
+    if (!userId) {
+        return res.status(400).json({ error: 'userId is required' })
+    }
+
+    try {
+        // Get user info and check Telegram
+        const { rows: userRows } = await pool.query(
+            'SELECT id, name, telegram_chat_id, telegram_verified FROM users WHERE id = $1',
+            [userId]
+        )
+
+        if (userRows.length === 0) {
+            return res.status(404).json({ error: 'Usuário não encontrado' })
+        }
+
+        const user = userRows[0]
+
+        if (!user.telegram_chat_id || !user.telegram_verified) {
+            return res.status(400).json({ error: 'Telegram não vinculado. Configure seu Telegram no perfil.' })
+        }
+
+        // Get device info
+        const { rows: deviceRows } = await pool.query(
+            'SELECT id, model, ip_address, admin_username, admin_password_enc FROM network_devices WHERE id = $1',
+            [id]
+        )
+
+        if (deviceRows.length === 0) {
+            return res.status(404).json({ error: 'Dispositivo não encontrado' })
+        }
+
+        const device = deviceRows[0]
+
+        if (!device.admin_password_enc) {
+            return res.status(400).json({ error: 'Este dispositivo não possui senha cadastrada' })
+        }
+
+        // Decrypt password
+        const password = decrypt(device.admin_password_enc)
+
+        // Format and send message
+        const message = telegram.formatPasswordMessage(
+            device.model,
+            device.ip_address,
+            device.admin_username || 'admin',
+            password,
+            user.name
+        )
+
+        const sent = await telegram.sendMessage(user.telegram_chat_id, message)
+
+        if (!sent) {
+            return res.status(500).json({ error: 'Falha ao enviar mensagem via Telegram' })
+        }
+
+        // Log the request for audit
+        await pool.query(
+            `INSERT INTO password_request_logs (user_id, device_id, ip_address, user_agent, status)
+             VALUES ($1, $2, $3, $4, 'sent')`,
+            [userId, id, ipAddress, userAgent]
+        )
+
+        console.log(`[Credentials] Password sent to ${user.name} for device ${device.model}`)
+
+        res.json({
+            success: true,
+            message: 'Senha enviada para seu Telegram'
+        })
+    } catch (error) {
+        console.error('Error requesting password:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Get password request logs (admin only)
+app.get('/api/password-requests', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT 
+                prl.id,
+                prl.requested_at,
+                prl.ip_address,
+                prl.status,
+                u.name as user_name,
+                u.email as user_email,
+                nd.model as device_model,
+                nd.ip_address as device_ip
+            FROM password_request_logs prl
+            LEFT JOIN users u ON prl.user_id = u.id
+            LEFT JOIN network_devices nd ON prl.device_id = nd.id
+            ORDER BY prl.requested_at DESC
+            LIMIT 100
+        `)
+
+        res.json(rows)
+    } catch (error) {
+        console.error('Error fetching password requests:', error)
         res.status(500).json({ error: error.message })
     }
 })

@@ -14,7 +14,8 @@ import {
   InputAdornment,
   CircularProgress,
   Tabs,
-  Tab
+  Tab,
+  Chip
 } from '@mui/material'
 import {
   Person as PersonIcon,
@@ -26,7 +27,10 @@ import {
   Phone as PhoneIcon,
   Edit as EditIcon,
   Check as CheckIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
+  Telegram as TelegramIcon,
+  LinkOff as LinkOffIcon,
+  Link as LinkIcon
 } from '@mui/icons-material'
 import { useAppSelector } from '../store/hooks'
 import { api } from '../services/api'
@@ -87,9 +91,16 @@ export default function Profile() {
     confirm: false
   })
 
+  // Telegram
+  const [telegramStatus, setTelegramStatus] = useState({ linked: false, verified: false })
+  const [verificationCode, setVerificationCode] = useState('')
+  const [chatIdInput, setChatIdInput] = useState('')
+  const [linkingTelegram, setLinkingTelegram] = useState(false)
+
   useEffect(() => {
     if (targetUserId) {
       loadProfile()
+      loadTelegramStatus()
     }
   }, [targetUserId])
 
@@ -160,6 +171,61 @@ export default function Profile() {
       enqueueSnackbar(error.message || 'Erro ao alterar senha', { variant: 'error' })
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Telegram functions
+  const loadTelegramStatus = async () => {
+    if (!targetUserId) return
+    try {
+      const status = await api.getTelegramStatus(targetUserId)
+      setTelegramStatus(status)
+    } catch (error) {
+      console.error('[Profile] Error loading Telegram status:', error)
+    }
+  }
+
+  const handleStartTelegramLink = async () => {
+    if (!targetUserId) return
+    setLinkingTelegram(true)
+    try {
+      const result = await api.startTelegramLink(targetUserId)
+      setVerificationCode(result.verificationCode)
+      enqueueSnackbar('Código gerado! Agora vincule seu Telegram.', { variant: 'info' })
+    } catch (error: any) {
+      enqueueSnackbar(error.message || 'Erro ao iniciar vinculação', { variant: 'error' })
+    } finally {
+      setLinkingTelegram(false)
+    }
+  }
+
+  const handleLinkTelegram = async () => {
+    if (!targetUserId || !chatIdInput) return
+    setLinkingTelegram(true)
+    try {
+      await api.linkTelegram(targetUserId, chatIdInput)
+      setTelegramStatus({ linked: true, verified: true })
+      setVerificationCode('')
+      setChatIdInput('')
+      enqueueSnackbar('Telegram vinculado com sucesso!', { variant: 'success' })
+    } catch (error: any) {
+      enqueueSnackbar(error.message || 'Erro ao vincular Telegram', { variant: 'error' })
+    } finally {
+      setLinkingTelegram(false)
+    }
+  }
+
+  const handleUnlinkTelegram = async () => {
+    if (!targetUserId) return
+    setLinkingTelegram(true)
+    try {
+      await api.unlinkTelegram(targetUserId)
+      setTelegramStatus({ linked: false, verified: false })
+      enqueueSnackbar('Telegram desvinculado', { variant: 'success' })
+    } catch (error: any) {
+      enqueueSnackbar(error.message || 'Erro ao desvincular', { variant: 'error' })
+    } finally {
+      setLinkingTelegram(false)
     }
   }
 
@@ -276,6 +342,7 @@ export default function Profile() {
           >
             <Tab icon={<PersonIcon />} label="Informações Pessoais" iconPosition="start" />
             <Tab icon={<LockIcon />} label="Segurança" iconPosition="start" />
+            <Tab icon={<TelegramIcon />} label="Telegram" iconPosition="start" />
           </Tabs>
 
           {/* Personal Information Tab */}
@@ -462,6 +529,129 @@ export default function Profile() {
                   </Button>
                 </Box>
               </Box>
+            </Box>
+          </TabPanel>
+
+          {/* Telegram Tab */}
+          <TabPanel value={tabValue} index={2}>
+            <Box display="flex" flexDirection="column" gap={3} maxWidth={500}>
+              <Typography variant="h6" gutterBottom>
+                Integração com Telegram
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Vincule sua conta do Telegram para receber senhas de dispositivos de forma segura.
+              </Typography>
+
+              {/* Status */}
+              <Box display="flex" alignItems="center" gap={2}>
+                <Typography variant="body1">Status:</Typography>
+                {telegramStatus.linked ? (
+                  <Chip
+                    icon={<CheckIcon />}
+                    label="Vinculado"
+                    color="success"
+                    variant="outlined"
+                  />
+                ) : (
+                  <Chip
+                    icon={<LinkOffIcon />}
+                    label="Não vinculado"
+                    color="default"
+                    variant="outlined"
+                  />
+                )}
+              </Box>
+
+              <Divider />
+
+              {!telegramStatus.linked ? (
+                <>
+                  {!verificationCode ? (
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Para vincular seu Telegram, siga os passos:
+                      </Typography>
+                      <Typography variant="body2" component="ol" sx={{ pl: 2 }}>
+                        <li>Clique em "Iniciar Vinculação" abaixo</li>
+                        <li>Copie o código gerado</li>
+                        <li>Abra o bot @OnliOpsBot no Telegram</li>
+                        <li>Envie /start e depois cole o código</li>
+                        <li>Insira seu Chat ID abaixo</li>
+                      </Typography>
+                      <Box mt={3}>
+                        <Button
+                          variant="contained"
+                          startIcon={linkingTelegram ? <CircularProgress size={20} color="inherit" /> : <LinkIcon />}
+                          onClick={handleStartTelegramLink}
+                          disabled={linkingTelegram}
+                          sx={{
+                            background: 'linear-gradient(135deg, #0088cc 0%, #0066aa 100%)',
+                          }}
+                        >
+                          {linkingTelegram ? 'Gerando...' : 'Iniciar Vinculação'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Box>
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        <Typography variant="body2">
+                          Seu código de verificação é: <strong>{verificationCode}</strong>
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          O código expira em 10 minutos
+                        </Typography>
+                      </Alert>
+
+                      <TextField
+                        label="Chat ID do Telegram"
+                        value={chatIdInput}
+                        onChange={(e) => setChatIdInput(e.target.value)}
+                        fullWidth
+                        placeholder="Ex: 123456789"
+                        helperText="Envie /start para o bot para obter seu Chat ID"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <TelegramIcon color="action" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+
+                      <Box mt={2}>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          startIcon={linkingTelegram ? <CircularProgress size={20} color="inherit" /> : <CheckIcon />}
+                          onClick={handleLinkTelegram}
+                          disabled={linkingTelegram || !chatIdInput}
+                        >
+                          {linkingTelegram ? 'Vinculando...' : 'Confirmar Vinculação'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+                </>
+              ) : (
+                <Box>
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      Seu Telegram está vinculado! Você receberá senhas de dispositivos diretamente no seu chat.
+                    </Typography>
+                  </Alert>
+
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={linkingTelegram ? <CircularProgress size={20} color="inherit" /> : <LinkOffIcon />}
+                    onClick={handleUnlinkTelegram}
+                    disabled={linkingTelegram}
+                  >
+                    {linkingTelegram ? 'Desvinculando...' : 'Desvincular Telegram'}
+                  </Button>
+                </Box>
+              )}
             </Box>
           </TabPanel>
         </CardContent>

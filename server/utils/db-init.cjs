@@ -254,6 +254,38 @@ async function runMigrations(pool) {
         {
             name: 'add_avatar_url_to_users',
             sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;`
+        },
+        // Add telegram_chat_id column to users
+        {
+            name: 'add_telegram_chat_id_to_users',
+            sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_chat_id VARCHAR(50);`
+        },
+        // Add telegram_verified column to users
+        {
+            name: 'add_telegram_verified_to_users',
+            sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_verified BOOLEAN DEFAULT false;`
+        },
+        // Create password_request_logs table
+        {
+            name: 'create_password_request_logs',
+            sql: `CREATE TABLE IF NOT EXISTS password_request_logs (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                device_id UUID REFERENCES network_devices(id) ON DELETE CASCADE,
+                requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                status VARCHAR(20) DEFAULT 'sent'
+            );`
+        },
+        // Create index on password_request_logs
+        {
+            name: 'create_idx_password_request_logs_user',
+            sql: `CREATE INDEX IF NOT EXISTS idx_password_request_logs_user ON password_request_logs(user_id);`
+        },
+        {
+            name: 'create_idx_password_request_logs_device',
+            sql: `CREATE INDEX IF NOT EXISTS idx_password_request_logs_device ON password_request_logs(device_id);`
         }
     ];
 

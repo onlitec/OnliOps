@@ -315,6 +315,87 @@ export const api = {
         return response.json()
     },
 
+    // === TELEGRAM ===
+    
+    getTelegramStatus: async (userId: string): Promise<{ linked: boolean; verified: boolean }> => {
+        const response = await fetch(`${API_BASE}/telegram/status/${userId}`)
+        if (!response.ok) throw new Error('Failed to get Telegram status')
+        return response.json()
+    },
+
+    startTelegramLink: async (userId: string): Promise<{ verificationCode: string; expiresIn: number }> => {
+        const response = await fetch(`${API_BASE}/telegram/start-link`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        })
+        if (!response.ok) throw new Error('Failed to start Telegram link')
+        return response.json()
+    },
+
+    verifyTelegram: async (userId: string, code: string, chatId: string): Promise<{ success: boolean }> => {
+        const response = await fetch(`${API_BASE}/telegram/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, code, chatId })
+        })
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to verify Telegram')
+        }
+        return response.json()
+    },
+
+    linkTelegram: async (userId: string, chatId: string): Promise<{ success: boolean }> => {
+        const response = await fetch(`${API_BASE}/telegram/link/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chatId })
+        })
+        if (!response.ok) throw new Error('Failed to link Telegram')
+        return response.json()
+    },
+
+    unlinkTelegram: async (userId: string): Promise<void> => {
+        const response = await fetch(`${API_BASE}/telegram/unlink/${userId}`, {
+            method: 'DELETE'
+        })
+        if (!response.ok) throw new Error('Failed to unlink Telegram')
+    },
+
+    // === DEVICE CREDENTIALS ===
+
+    saveDeviceCredentials: async (deviceId: string, admin_username: string, admin_password: string): Promise<void> => {
+        const response = await fetch(`${API_BASE}/devices/${deviceId}/credentials`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admin_username, admin_password })
+        })
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to save credentials')
+        }
+    },
+
+    requestDevicePassword: async (deviceId: string, userId: string): Promise<{ message: string }> => {
+        const response = await fetch(`${API_BASE}/devices/${deviceId}/request-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        })
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to request password')
+        }
+        return response.json()
+    },
+
+    getPasswordRequestLogs: async (): Promise<any[]> => {
+        const response = await fetch(`${API_BASE}/password-requests`)
+        if (!response.ok) throw new Error('Failed to get password request logs')
+        return response.json()
+    },
+
     // Settings (Global)
     getSettings: async (): Promise<any> => {
         const response = await fetch(`${API_BASE}/settings`)
