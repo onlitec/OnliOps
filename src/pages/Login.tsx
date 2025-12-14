@@ -13,7 +13,7 @@ import {
 import { NetworkCheck as NetworkIcon } from '@mui/icons-material'
 import { useAppDispatch, useAppSelector } from '../hooks/useApp'
 import { login } from '../store/slices/authSlice'
-import { supabase, supabaseConfigured } from '../lib/supabase'
+
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -56,16 +56,6 @@ export default function Login() {
             </Typography>
           </Box>
 
-          {(!supabaseConfigured) && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              <strong>Modo de Desenvolvimento Local</strong><br />
-              Use as credenciais abaixo para testar:
-              <ul style={{ marginTop: 8, marginBottom: 0 }}>
-                <li><strong>Admin:</strong> admin@calabasas.local / admin123</li>
-                <li><strong>Teste:</strong> teste@calabasas.local / teste123</li>
-              </ul>
-            </Alert>
-          )}
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -114,31 +104,11 @@ export default function Login() {
               </Typography>
             )}
 
-            {supabaseConfigured && (
-              <Button
-                fullWidth
-                variant="outlined"
-                sx={{ mb: 2 }}
-                onClick={async () => {
-                  try {
-                    const redirectTo = window.location.origin + '/dashboard'
-                    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, scopes: 'openid email profile' } })
-                  } catch (err: any) {
-                    alert('Falha ao iniciar login com Google. Verifique configurações do OAuth e tente novamente.')
-                  }
-                }}
-              >
-                Entrar com Google
-              </Button>
-            )}
           </Box>
 
           <Box sx={{ mt: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              {supabaseConfigured
-                ? 'Use suas credenciais de administrador para acessar o sistema'
-                : 'Autenticação local habilitada - Use as credenciais acima'
-              }
+              Use suas credenciais para acessar o sistema
             </Typography>
           </Box>
         </Paper>
