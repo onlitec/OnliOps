@@ -1,0 +1,276 @@
+-- ============================================
+-- OnliOps - Schema Completo para Produção
+-- ============================================
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- ============================================
+-- Tabela de Clientes
+-- ============================================
+CREATE TABLE IF NOT EXISTS clients (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    logo_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Projetos
+-- ============================================
+CREATE TABLE IF NOT EXISTS projects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Roles
+-- ============================================
+CREATE TABLE IF NOT EXISTS roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    permissions JSONB DEFAULT '[]',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Users
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) DEFAULT 'guest' CHECK (
+        role IN (
+            'admin',
+            'security_operator',
+            'technical_viewer',
+            'guest'
+        )
+    ),
+    is_active BOOLEAN DEFAULT true,
+    is_test BOOLEAN DEFAULT false,
+    last_login TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de User Permissions
+-- ============================================
+CREATE TABLE IF NOT EXISTS user_permissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
+    client_id UUID REFERENCES clients(id) ON DELETE CASCADE,
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de VLANs
+-- ============================================
+CREATE TABLE IF NOT EXISTS vlans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    vlan_id INTEGER NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    subnet VARCHAR(18),
+    gateway VARCHAR(15),
+    description TEXT,
+    firewall_rules JSONB DEFAULT '[]',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Device Categories
+-- ============================================
+CREATE TABLE IF NOT EXISTS device_categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    icon VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Network Devices
+-- ============================================
+CREATE TABLE IF NOT EXISTS network_devices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    vlan_id UUID REFERENCES vlans(id) ON DELETE
+    SET NULL,
+        category_id UUID REFERENCES device_categories(id) ON DELETE
+    SET NULL,
+        managed_by UUID REFERENCES users(id) ON DELETE
+    SET NULL,
+        device_type VARCHAR(50) NOT NULL,
+        model VARCHAR(100),
+        manufacturer VARCHAR(50),
+        ip_address INET,
+        mac_address MACADDR,
+        hostname VARCHAR(100),
+        location VARCHAR(200),
+        status VARCHAR(20) DEFAULT 'active' CHECK (
+            status IN ('active', 'inactive', 'maintenance', 'error')
+        ),
+        configuration JSONB DEFAULT '{}',
+        last_seen TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Device Connections
+-- ============================================
+CREATE TABLE IF NOT EXISTS device_connections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    from_device_id UUID REFERENCES network_devices(id) ON DELETE CASCADE,
+    to_device_id UUID REFERENCES network_devices(id) ON DELETE CASCADE,
+    connection_type VARCHAR(50),
+    port_from VARCHAR(50),
+    port_to VARCHAR(50),
+    bandwidth INTEGER,
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Alerts
+-- ============================================
+CREATE TABLE IF NOT EXISTS alerts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    device_id UUID REFERENCES network_devices(id) ON DELETE CASCADE,
+    alert_type VARCHAR(50) NOT NULL,
+    severity VARCHAR(20) NOT NULL CHECK (severity IN ('info', 'warning', 'critical')),
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    metadata JSONB DEFAULT '{}',
+    is_resolved BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    resolved_at TIMESTAMP WITH TIME ZONE
+);
+-- ============================================
+-- Tabela de Simulations
+-- ============================================
+CREATE TABLE IF NOT EXISTS simulations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    config JSONB DEFAULT '{}',
+    status VARCHAR(50) DEFAULT 'draft',
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Audit Logs
+-- ============================================
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    action VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(100),
+    resource_id UUID,
+    old_values JSONB,
+    new_values JSONB,
+    ip_address INET,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de Login Events
+-- ============================================
+CREATE TABLE IF NOT EXISTS login_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    email VARCHAR(255),
+    provider VARCHAR(50),
+    success BOOLEAN DEFAULT true,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Tabela de System Settings
+-- ============================================
+CREATE TABLE IF NOT EXISTS system_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key VARCHAR(100) UNIQUE NOT NULL,
+    value JSONB,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+-- ============================================
+-- Índices
+-- ============================================
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_id);
+CREATE INDEX IF NOT EXISTS idx_vlans_project ON vlans(project_id);
+CREATE INDEX IF NOT EXISTS idx_devices_project ON network_devices(project_id);
+CREATE INDEX IF NOT EXISTS idx_devices_vlan ON network_devices(vlan_id);
+CREATE INDEX IF NOT EXISTS idx_alerts_project ON alerts(project_id);
+CREATE INDEX IF NOT EXISTS idx_alerts_device ON alerts(device_id);
+CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at DESC);
+-- ============================================
+-- Dados Iniciais
+-- ============================================
+-- Roles padrão
+INSERT INTO roles (name, description, permissions)
+VALUES ('admin', 'Administrador do Sistema', '["*"]'),
+    (
+        'manager',
+        'Gerente de Projetos',
+        '["projects:*", "devices:*", "users:read"]'
+    ),
+    (
+        'operator',
+        'Operador',
+        '["devices:read", "devices:update", "alerts:*"]'
+    ),
+    (
+        'viewer',
+        'Visualizador',
+        '["projects:read", "devices:read", "alerts:read"]'
+    ) ON CONFLICT (name) DO NOTHING;
+-- Categorias de dispositivos padrão
+INSERT INTO device_categories (slug, name, icon)
+VALUES ('camera', 'Câmera', 'camera'),
+    ('nvr', 'NVR/DVR', 'storage'),
+    ('switch', 'Switch', 'lan'),
+    ('router', 'Router', 'router'),
+    ('firewall', 'Firewall', 'security'),
+    ('access_point', 'Access Point', 'wifi'),
+    ('reader', 'Leitor de Acesso', 'badge'),
+    ('controller', 'Controlador', 'memory'),
+    (
+        'converter',
+        'Conversor',
+        'settings_input_component'
+    ),
+    ('sensor', 'Sensor', 'sensors'),
+    ('server', 'Servidor', 'dns'),
+    ('other', 'Outro', 'devices_other') ON CONFLICT (slug) DO NOTHING;
+-- Usuário admin de exemplo
+INSERT INTO users (email, name, role, is_active)
+VALUES (
+        'admin@onliops.com',
+        'Administrador',
+        'admin',
+        true
+    ) ON CONFLICT (email) DO NOTHING;
+-- Cliente de exemplo
+INSERT INTO clients (name)
+VALUES ('Cliente Demonstração') ON CONFLICT DO NOTHING;
+-- Settings padrão
+INSERT INTO system_settings (key, value, description)
+VALUES ('app_name', '"OnliOps"', 'Nome da aplicação'),
+    ('theme', '"dark"', 'Tema padrão'),
+    (
+        'notifications_enabled',
+        'true',
+        'Notificações habilitadas'
+    ) ON CONFLICT (key) DO NOTHING;
