@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
     Box,
     Typography,
@@ -41,7 +42,8 @@ import {
     Security as SecurityIcon,
     AdminPanelSettings as AdminIcon,
     Visibility as ViewerIcon,
-    ManageAccounts as ManagerIcon
+    ManageAccounts as ManagerIcon,
+    Person as PersonIcon
 } from '@mui/icons-material'
 import { api } from '../../services/api'
 
@@ -75,6 +77,7 @@ interface User {
 }
 
 export default function UserManagement() {
+    const navigate = useNavigate()
     const [users, setUsers] = useState<User[]>([])
     const [roles, setRoles] = useState<Role[]>([])
     const [loading, setLoading] = useState(true)
@@ -233,6 +236,22 @@ export default function UserManagement() {
                         Administre usuários, permissões e níveis de acesso
                     </Typography>
                 </div>
+                <Button
+                    variant="contained"
+                    startIcon={<PersonIcon />}
+                    onClick={() => navigate('/profile')}
+                    sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        boxShadow: '0 4px 14px rgba(99, 102, 241, 0.25)',
+                        fontWeight: 600,
+                        '&:hover': {
+                            background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                            boxShadow: '0 6px 20px rgba(99, 102, 241, 0.35)',
+                        },
+                    }}
+                >
+                    Meu Perfil
+                </Button>
             </Box>
 
             {error && (
