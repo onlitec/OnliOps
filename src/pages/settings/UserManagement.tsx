@@ -109,6 +109,7 @@ export default function UserManagement() {
                 api.getClients(),
                 api.getProjectsSummary()
             ])
+            console.log('[UserManagement] Loaded users:', usersData)
             setUsers(usersData)
             setRoles(rolesData)
             setClients(clientsData)
