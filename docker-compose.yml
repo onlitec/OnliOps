@@ -1,7 +1,7 @@
 # ============================================
 # OnliOps - Docker Compose (Coolify Deploy)
 # ============================================
-# Full stack: PostgreSQL + Backend + Frontend
+# Full stack: PostgreSQL + Backend + Frontend + Ollama
 # ============================================
 
 services:
@@ -29,8 +29,36 @@ services:
       - onliops-network
 
   # ==========================================
-  # Node.js Backend API
+  # Ollama - Local AI Model Server
   # ==========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: onliops-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    expose:
+      - "11434"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - onliops-network
+    # Uncomment below for GPU support (NVIDIA)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+    # ==========================================
+    # Node.js Backend API
+    # ==========================================
   backend:
     build:
       context: .
@@ -40,19 +68,25 @@ services:
     depends_on:
       database:
         condition: service_healthy
+      ollama:
+        condition: service_started
     environment:
       NODE_ENV: production
       PORT: 3001
+      # Database
       PGHOST: database
       PGPORT: 5432
       PGUSER: ${POSTGRES_USER:-onliops}
       PGPASSWORD: ${POSTGRES_PASSWORD:-changeme}
       PGDATABASE: ${POSTGRES_DB:-onliops}
       DATABASE_URL: postgresql://${POSTGRES_USER:-onliops}:${POSTGRES_PASSWORD:-changeme}@database:5432/${POSTGRES_DB:-onliops}
+      # Ollama (internal Docker network)
+      OLLAMA_URL: http://ollama:11434
+      AI_MODEL: ${AI_MODEL:-phi3}
+      # External AI APIs (optional)
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      OLLAMA_URL: ${OLLAMA_URL:-}
     volumes:
       - uploads_data:/app/uploads
     expose:
@@ -104,6 +138,8 @@ volumes:
     name: onliops-postgres-data
   uploads_data:
     name: onliops-uploads
+  ollama_data:
+    name: onliops-ollama-models
 
 # ==========================================
 # Networks
