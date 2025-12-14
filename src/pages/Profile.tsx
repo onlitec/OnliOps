@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -52,9 +53,14 @@ function TabPanel(props: TabPanelProps) {
 export default function Profile() {
   const { user } = useAppSelector((state) => state.auth)
   const { enqueueSnackbar } = useSnackbar()
+  const [searchParams] = useSearchParams()
   const [tabValue, setTabValue] = useState(0)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  // Check if editing another user's profile
+  const targetUserId = searchParams.get('userId') || user?.id
+  const isEditingOther = searchParams.get('userId') && searchParams.get('userId') !== user?.id
 
   // Profile data
   const [profile, setProfile] = useState({
@@ -78,15 +84,15 @@ export default function Profile() {
 
   useEffect(() => {
     loadProfile()
-  }, [user])
+  }, [user, targetUserId])
 
   const loadProfile = async () => {
-    if (!user?.id) {
+    if (!targetUserId) {
       setLoading(false)
       return
     }
     try {
-      const data = await api.getProfile(user.id)
+      const data = await api.getProfile(targetUserId)
       setProfile({
         name: data.name || '',
         email: data.email || '',
@@ -108,10 +114,10 @@ export default function Profile() {
   }
 
   const handleSaveProfile = async () => {
-    if (!user?.id) return
+    if (!targetUserId) return
     setSaving(true)
     try {
-      await api.updateProfile(user.id, profile)
+      await api.updateProfile(targetUserId, profile)
       enqueueSnackbar('Perfil atualizado com sucesso!', { variant: 'success' })
     } catch (error: any) {
       enqueueSnackbar(error.message || 'Erro ao salvar perfil', { variant: 'error' })
@@ -121,7 +127,7 @@ export default function Profile() {
   }
 
   const handleChangePassword = async () => {
-    if (!user?.id) return
+    if (!targetUserId) return
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       enqueueSnackbar('As senhas não coincidem', { variant: 'error' })
@@ -135,7 +141,7 @@ export default function Profile() {
 
     setSaving(true)
     try {
-      await api.changePassword(user.id, passwordData.currentPassword, passwordData.newPassword)
+      await api.changePassword(targetUserId!, passwordData.currentPassword, passwordData.newPassword)
       enqueueSnackbar('Senha alterada com sucesso!', { variant: 'success' })
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (error: any) {
@@ -167,10 +173,10 @@ export default function Profile() {
             mb: 1,
           }}
         >
-          Meu Perfil
+          {isEditingOther ? `Editar Perfil: ${profile.name || profile.email}` : 'Meu Perfil'}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Gerencie suas informações pessoais e segurança
+          {isEditingOther ? 'Edite as informações do usuário selecionado' : 'Gerencie suas informações pessoais e segurança'}
         </Typography>
       </Box>
 

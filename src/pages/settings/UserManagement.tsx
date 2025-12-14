@@ -305,6 +305,15 @@ export default function UserManagement() {
                                                         <SecurityIcon />
                                                     </IconButton>
                                                 </Tooltip>
+                                                <Tooltip title="Alterar Perfil">
+                                                    <IconButton
+                                                        onClick={() => navigate(`/profile?userId=${user.id}`)}
+                                                        size="small"
+                                                        sx={{ color: '#9333ea' }}
+                                                    >
+                                                        <PersonIcon />
+                                                    </IconButton>
+                                                </Tooltip>
                                                 <Tooltip title="Editar">
                                                     <IconButton onClick={() => handleEdit(user)} size="small" color="primary">
                                                         <EditIcon />
