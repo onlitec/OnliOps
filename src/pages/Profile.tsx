@@ -61,8 +61,11 @@ export default function Profile() {
   const [saving, setSaving] = useState(false)
 
   // Check if editing another user's profile
-  const targetUserId = searchParams.get('userId') || user?.id
-  const isEditingOther = searchParams.get('userId') && searchParams.get('userId') !== user?.id
+  const urlUserId = searchParams.get('userId')
+  const targetUserId = urlUserId || user?.id
+  const isEditingOther = Boolean(urlUserId && urlUserId !== user?.id)
+
+  console.log('[Profile] urlUserId:', urlUserId, 'user?.id:', user?.id, 'targetUserId:', targetUserId, 'isEditingOther:', isEditingOther)
 
   // Profile data
   const [profile, setProfile] = useState({
@@ -85,16 +88,21 @@ export default function Profile() {
   })
 
   useEffect(() => {
-    loadProfile()
-  }, [user, targetUserId])
+    if (targetUserId) {
+      loadProfile()
+    }
+  }, [targetUserId])
 
   const loadProfile = async () => {
     if (!targetUserId) {
       setLoading(false)
       return
     }
+    setLoading(true)
+    console.log('[Profile] Loading profile for userId:', targetUserId)
     try {
       const data = await api.getProfile(targetUserId)
+      console.log('[Profile] Loaded data:', data)
       setProfile({
         name: data.name || '',
         email: data.email || '',
@@ -102,14 +110,16 @@ export default function Profile() {
         avatar_url: data.avatar_url || ''
       })
     } catch (error) {
-      console.error('Error loading profile:', error)
-      // Use local user data if API fails
-      setProfile({
-        name: user.name || '',
-        email: user.email || '',
-        phone: '',
-        avatar_url: ''
-      })
+      console.error('[Profile] Error loading profile:', error)
+      // Only fallback to logged user if not editing other
+      if (!isEditingOther && user) {
+        setProfile({
+          name: user.name || '',
+          email: user.email || '',
+          phone: '',
+          avatar_url: ''
+        })
+      }
     } finally {
       setLoading(false)
     }
