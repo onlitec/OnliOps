@@ -237,6 +237,39 @@ INSERT INTO system_settings (key, value, description) VALUES
 ON CONFLICT (key) DO NOTHING;
 `;
 
+// Migrations to add new columns to existing tables
+async function runMigrations(pool) {
+    const migrations = [
+        // Add phone column to users
+        {
+            name: 'add_phone_to_users',
+            sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20);`
+        },
+        // Add password_hash column to users
+        {
+            name: 'add_password_hash_to_users',
+            sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);`
+        },
+        // Add avatar_url column to users
+        {
+            name: 'add_avatar_url_to_users',
+            sql: `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;`
+        }
+    ];
+
+    for (const migration of migrations) {
+        try {
+            await pool.query(migration.sql);
+            console.log(`[DB] Migration '${migration.name}' applied successfully`);
+        } catch (error) {
+            // Ignore errors for already existing columns
+            if (!error.message.includes('already exists')) {
+                console.error(`[DB] Migration '${migration.name}' failed:`, error.message);
+            }
+        }
+    }
+}
+
 async function initializeDatabase(pool) {
     console.log('[DB] Checking database schema...');
 
@@ -264,6 +297,10 @@ async function initializeDatabase(pool) {
             // Run schema anyway with IF NOT EXISTS - won't affect existing tables
             await pool.query(SCHEMA_SQL);
             console.log('[DB] Schema verified.');
+
+            // Run migrations to add new columns to existing tables
+            console.log('[DB] Running migrations for new columns...');
+            await runMigrations(pool);
         }
 
         // Verify table count
