@@ -43,14 +43,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      # Database connection
       PGHOST: database
       PGPORT: 5432
       PGUSER: ${POSTGRES_USER:-onliops}
       PGPASSWORD: ${POSTGRES_PASSWORD:-changeme}
       PGDATABASE: ${POSTGRES_DB:-onliops}
       DATABASE_URL: postgresql://${POSTGRES_USER:-onliops}:${POSTGRES_PASSWORD:-changeme}@database:5432/${POSTGRES_DB:-onliops}
-      # AI Services (optional)
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
@@ -69,7 +67,7 @@ services:
       - onliops-network
 
   # ==========================================
-  # React Frontend (Nginx)
+  # React Frontend (Nginx) - MAIN SERVICE
   # ==========================================
   frontend:
     build:
@@ -86,6 +84,9 @@ services:
         condition: service_healthy
     ports:
       - "80:80"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.expose=true"
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/" ]
       interval: 30s
