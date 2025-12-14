@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Grid,
   Card,
@@ -7,6 +8,7 @@ import {
   Box,
   Chip,
   LinearProgress,
+  CardActionArea,
 } from '@mui/material'
 import { supabase } from '../lib/supabase'
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Tooltip, Legend } from 'chart.js'
@@ -17,6 +19,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Router as RouterIcon,
   CameraAlt as CameraIcon,
+  ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material'
 import { useAppDispatch, useAppSelector } from '../hooks/useApp'
 import { fetchDevices } from '../store/slices/devicesSlice'
@@ -30,6 +33,8 @@ interface StatCardProps {
   icon: React.ReactNode
   color: 'primary' | 'secondary' | 'error' | 'warning'
   subtitle?: string
+  link?: string
+  onClick?: () => void
 }
 
 const gradientConfigs = {
@@ -55,8 +60,19 @@ const gradientConfigs = {
   },
 }
 
-function StatCard({ title, value, icon, color, subtitle }: StatCardProps) {
+function StatCard({ title, value, icon, color, subtitle, link, onClick }: StatCardProps) {
+  const navigate = useNavigate()
   const config = gradientConfigs[color]
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick()
+    } else if (link) {
+      navigate(link)
+    }
+  }
+
+  const isClickable = !!(link || onClick)
 
   return (
     <Card
@@ -71,8 +87,9 @@ function StatCard({ title, value, icon, color, subtitle }: StatCardProps) {
         border: (theme) =>
           `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
         transition: 'all 0.3s ease',
+        cursor: isClickable ? 'pointer' : 'default',
         '&:hover': {
-          transform: 'translateY(-4px)',
+          transform: isClickable ? 'translateY(-4px)' : 'none',
           boxShadow: config.shadow,
           borderColor: (theme) => theme.palette[color].main,
           '& .stat-icon-box': {
@@ -81,8 +98,13 @@ function StatCard({ title, value, icon, color, subtitle }: StatCardProps) {
           '& .stat-glow': {
             opacity: 1,
           },
+          '& .stat-arrow': {
+            opacity: 1,
+            transform: 'translateX(0)',
+          },
         },
       }}
+      onClick={isClickable ? handleClick : undefined}
     >
       {/* Gradient glow effect on hover */}
       <Box
@@ -127,13 +149,26 @@ function StatCard({ title, value, icon, color, subtitle }: StatCardProps) {
               {value}
             </Typography>
             {subtitle && (
-              <Typography
-                color="text.secondary"
-                variant="caption"
-                sx={{ display: 'block', mt: 0.5 }}
-              >
-                {subtitle}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                <Typography
+                  color="text.secondary"
+                  variant="caption"
+                >
+                  {subtitle}
+                </Typography>
+                {isClickable && (
+                  <ArrowForwardIcon
+                    className="stat-arrow"
+                    sx={{
+                      fontSize: 14,
+                      color: 'text.secondary',
+                      opacity: 0,
+                      transform: 'translateX(-4px)',
+                      transition: 'all 0.3s ease',
+                    }}
+                  />
+                )}
+              </Box>
             )}
           </Box>
           <Box
@@ -278,6 +313,7 @@ export default function Dashboard() {
             icon={<DevicesIcon sx={{ fontSize: 40 }} />}
             color="primary"
             subtitle={`${activeDevices} ativos`}
+            link="/devices"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -286,6 +322,8 @@ export default function Dashboard() {
             value={vlans.length}
             icon={<NetworkIcon sx={{ fontSize: 40 }} />}
             color="secondary"
+            subtitle="Gerenciar VLANs"
+            link="/vlans"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -295,6 +333,7 @@ export default function Dashboard() {
             icon={<WarningIcon sx={{ fontSize: 40 }} />}
             color="error"
             subtitle={`${unreadCount} não lidos`}
+            link="/alerts"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -304,6 +343,7 @@ export default function Dashboard() {
             icon={<CheckCircleIcon sx={{ fontSize: 40 }} />}
             color="secondary"
             subtitle={`${activeDevices} de ${devices.length}`}
+            link="/devices?status=active"
           />
         </Grid>
       </Grid>

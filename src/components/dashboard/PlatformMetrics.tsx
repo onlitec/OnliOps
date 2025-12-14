@@ -1,5 +1,6 @@
 import { Card, CardContent, Typography, Box, alpha, useTheme } from '@mui/material'
-import { Users, Folder, HardDrive, AlertTriangle, Clock } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Users, Folder, HardDrive, AlertTriangle, Clock, ChevronRight } from 'lucide-react'
 
 interface PlatformMetricsProps {
     data: {
@@ -13,6 +14,7 @@ interface PlatformMetricsProps {
 
 export default function PlatformMetrics({ data }: PlatformMetricsProps) {
     const theme = useTheme()
+    const navigate = useNavigate()
 
     const metrics = [
         {
@@ -20,30 +22,35 @@ export default function PlatformMetrics({ data }: PlatformMetricsProps) {
             value: data.totalClients,
             icon: Users,
             color: '#3b82f6',
+            link: '/admin/clients',
         },
         {
             label: 'Projetos',
             value: data.totalProjects,
             icon: Folder,
             color: '#22c55e',
+            link: '/admin/projects',
         },
         {
             label: 'Dispositivos',
             value: data.totalDevices,
             icon: HardDrive,
             color: '#f97316',
+            link: '/devices',
         },
         {
             label: 'Alertas',
             value: data.activeAlerts,
             icon: AlertTriangle,
             color: data.activeAlerts > 0 ? '#ef4444' : '#6b7280',
+            link: '/alerts',
         },
         {
             label: 'Uptime',
             value: data.uptime,
             icon: Clock,
             color: '#06b6d4',
+            link: null, // No link for uptime
         },
     ]
 
@@ -55,29 +62,55 @@ export default function PlatformMetrics({ data }: PlatformMetricsProps) {
         }}>
             {metrics.map((metric) => {
                 const Icon = metric.icon
+                const isClickable = !!metric.link
                 return (
                     <Card
                         key={metric.label}
+                        onClick={isClickable ? () => navigate(metric.link!) : undefined}
                         sx={{
                             bgcolor: alpha(metric.color, 0.08),
                             border: `1px solid ${alpha(metric.color, 0.2)}`,
-                            '&:hover': { borderColor: alpha(metric.color, 0.4) }
+                            cursor: isClickable ? 'pointer' : 'default',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                borderColor: alpha(metric.color, 0.4),
+                                transform: isClickable ? 'translateY(-2px)' : 'none',
+                                boxShadow: isClickable ? `0 4px 12px ${alpha(metric.color, 0.2)}` : 'none',
+                                '& .metric-arrow': {
+                                    opacity: 1,
+                                    transform: 'translateX(0)',
+                                },
+                            }
                         }}
                     >
                         <CardContent sx={{ py: 1.5, px: 2 }}>
-                            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                                <Icon size={14} color={metric.color} />
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: 'text.secondary',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: 0.5,
-                                        fontSize: '0.65rem'
-                                    }}
-                                >
-                                    {metric.label}
-                                </Typography>
+                            <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <Icon size={14} color={metric.color} />
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            color: 'text.secondary',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: 0.5,
+                                            fontSize: '0.65rem'
+                                        }}
+                                    >
+                                        {metric.label}
+                                    </Typography>
+                                </Box>
+                                {isClickable && (
+                                    <ChevronRight
+                                        className="metric-arrow"
+                                        size={14}
+                                        color={metric.color}
+                                        style={{
+                                            opacity: 0,
+                                            transform: 'translateX(-4px)',
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    />
+                                )}
                             </Box>
                             <Typography
                                 variant="h5"
