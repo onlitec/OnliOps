@@ -158,6 +158,139 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 /**
+ * POST /api/ai/analyze-ips
+ * Analyze IPs in uploaded file and detect malformed ones
+ */
+router.post('/analyze-ips', async (req, res) => {
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId is required' });
+    }
+
+    try {
+        // Load session data
+        const sessionFile = path.join(__dirname, '../uploads', `session-${sessionId}.json`);
+        if (!fs.existsSync(sessionFile)) {
+            return res.status(404).json({ error: 'Session not found or expired' });
+        }
+
+        const sessionData = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
+
+        // Extract all devices from all sheets with auto-mapping
+        const allDevices = [];
+
+        for (const sheet of sessionData.sheets) {
+            if (!sheet.isDeviceSheet) continue;
+
+            const extractResult = excelProcessor.extractSheetData(
+                sessionData.filePath,
+                sheet.name,
+                sheet.autoMapping
+            );
+
+            if (extractResult.success) {
+                allDevices.push(...extractResult.data);
+            }
+        }
+
+        // Analyze for malformed IPs
+        const analysis = excelProcessor.analyzeMalformedIPs(allDevices);
+
+        res.json({
+            success: true,
+            sessionId,
+            ...analysis
+        });
+    } catch (error) {
+        console.error('IP analysis error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/correct-ips
+ * Apply IP corrections based on user-provided network prefix
+ */
+router.post('/correct-ips', async (req, res) => {
+    const { sessionId, networkPrefix, hostDigits, sheetConfigs } = req.body;
+
+    if (!sessionId || !networkPrefix) {
+        return res.status(400).json({ error: 'sessionId and networkPrefix are required' });
+    }
+
+    try {
+        // Load session data
+        const sessionFile = path.join(__dirname, '../uploads', `session-${sessionId}.json`);
+        if (!fs.existsSync(sessionFile)) {
+            return res.status(404).json({ error: 'Session not found or expired' });
+        }
+
+        const sessionData = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
+
+        // Extract devices from selected sheets
+        const allDevices = [];
+
+        const configs = sheetConfigs || sessionData.sheets.filter(s => s.isDeviceSheet).map(s => ({
+            sheetName: s.name,
+            enabled: true,
+            columnMapping: s.autoMapping
+        }));
+
+        for (const config of configs) {
+            if (!config.enabled) continue;
+
+            const extractResult = excelProcessor.extractSheetData(
+                sessionData.filePath,
+                config.sheetName,
+                config.columnMapping
+            );
+
+            if (extractResult.success) {
+                extractResult.data.forEach(device => {
+                    allDevices.push({
+                        ...device,
+                        _sourceSheet: config.sheetName
+                    });
+                });
+            }
+        }
+
+        // Apply IP corrections
+        const correctionResult = excelProcessor.applyIPCorrections(
+            allDevices,
+            networkPrefix,
+            hostDigits || 3
+        );
+
+        // Update session with corrected data
+        sessionData.correctedDevices = correctionResult.devices;
+        sessionData.ipCorrectionApplied = true;
+        sessionData.ipCorrectionPrefix = networkPrefix;
+        fs.writeFileSync(sessionFile, JSON.stringify(sessionData, null, 2));
+
+        res.json({
+            success: true,
+            sessionId,
+            stats: correctionResult.stats,
+            // Return preview of first 20 devices
+            preview: correctionResult.devices.slice(0, 20).map(d => ({
+                original: d._originalIP || d.ip_address,
+                corrected: d._ipCorrected ? d.ip_address : null,
+                wasCorrected: d._ipCorrected,
+                method: d._correctionMethod,
+                confidence: d._correctionConfidence,
+                serial: d.serial_number,
+                model: d.model
+            }))
+        });
+    } catch (error) {
+        console.error('IP correction error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
  * POST /api/ai/preview-import
  * Preview devices to be imported with AI categorization
  */

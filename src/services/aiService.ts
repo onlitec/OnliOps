@@ -78,6 +78,38 @@ export interface ChatResponse {
     model: string;
 }
 
+export interface IPAnalysisResult {
+    success: boolean;
+    sessionId: string;
+    hasMalformed: boolean;
+    malformedCount: number;
+    validCount: number;
+    samples: Record<number, string[]>;
+    detectedPrefix: string | null;
+    suggestedAction: 'none' | 'use_detected_prefix' | 'request_prefix';
+}
+
+export interface IPCorrectionResult {
+    success: boolean;
+    sessionId: string;
+    stats: {
+        total: number;
+        corrected: number;
+        failed: number;
+        unchanged: number;
+    };
+    preview: Array<{
+        original: string;
+        corrected: string | null;
+        wasCorrected: boolean;
+        method: string;
+        confidence: 'high' | 'medium' | 'low';
+        serial: string;
+        model: string;
+    }>;
+}
+
+
 class AIApiService {
     private projectId: string | null = null;
 
@@ -212,6 +244,51 @@ class AIApiService {
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.error || 'Dashboard generation failed');
+        }
+
+        return response.json();
+    }
+
+    /**
+     * Analyze IPs in uploaded file for malformed entries
+     */
+    async analyzeIPs(sessionId: string): Promise<IPAnalysisResult> {
+        const response = await fetch(`${API_BASE}/analyze-ips`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ sessionId }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'IP analysis failed');
+        }
+
+        return response.json();
+    }
+
+    /**
+     * Apply IP corrections based on network prefix
+     */
+    async correctIPs(
+        sessionId: string,
+        networkPrefix: string,
+        hostDigits?: number,
+        sheetConfigs?: Array<{
+            sheetName: string;
+            enabled: boolean;
+            columnMapping: Record<string, string | null>;
+        }>
+    ): Promise<IPCorrectionResult> {
+        const response = await fetch(`${API_BASE}/correct-ips`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ sessionId, networkPrefix, hostDigits, sheetConfigs }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'IP correction failed');
         }
 
         return response.json();

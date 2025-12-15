@@ -45,8 +45,9 @@ import {
     FilePresent,
 } from '@mui/icons-material'
 import { useDropzone } from 'react-dropzone'
-import aiApi, { SheetInfo, DevicePreview, UploadResult } from '../../services/aiService'
+import aiApi, { SheetInfo, DevicePreview, UploadResult, IPAnalysisResult, IPCorrectionResult } from '../../services/aiService'
 import { api } from '../../services/api'
+import IPCorrectionDialog from './IPCorrectionDialog'
 
 interface SmartImportModalProps {
     open: boolean
@@ -91,6 +92,11 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
     })
     const [importResults, setImportResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
 
+    // IP Correction
+    const [showIPCorrection, setShowIPCorrection] = useState(false)
+    const [ipAnalysis, setIpAnalysis] = useState<IPAnalysisResult | null>(null)
+    const [ipCorrectionApplied, setIpCorrectionApplied] = useState(false)
+
     useEffect(() => {
         if (open) {
             aiApi.setProjectId(projectId)
@@ -122,6 +128,8 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
 
         setLoading(true)
         setError(null)
+        setIpCorrectionApplied(false)
+        setIpAnalysis(null)
 
         try {
             const result = await aiApi.uploadFile(acceptedFiles[0])
@@ -136,6 +144,19 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                 expanded: false,
             }))
             setSheetConfigs(configs)
+
+            // Analyze for malformed IPs
+            try {
+                const analysis = await aiApi.analyzeIPs(result.sessionId)
+                setIpAnalysis(analysis)
+
+                if (analysis.hasMalformed) {
+                    // Show IP correction dialog before continuing
+                    setShowIPCorrection(true)
+                }
+            } catch (ipErr) {
+                console.warn('IP analysis failed, continuing without correction:', ipErr)
+            }
 
             setActiveStep(1)
         } catch (err: any) {
@@ -281,6 +302,18 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
         }
     }
 
+    const handleIPCorrectionApply = (result: IPCorrectionResult) => {
+        setIpCorrectionApplied(true)
+        setShowIPCorrection(false)
+        // The corrected devices are stored in the session on the backend
+        // They will be used when we call preview-import
+    }
+
+    const handleIPCorrectionClose = () => {
+        setShowIPCorrection(false)
+        // User chose to skip correction, continue with original data
+    }
+
     const handleClose = () => {
         setActiveStep(0)
         setUploadResult(null)
@@ -289,6 +322,9 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
         setImportResults(null)
         setImportProgress({ current: 0, total: 0, percentage: 0, currentBatch: 0, totalBatches: 0 })
         setError(null)
+        setIpAnalysis(null)
+        setIpCorrectionApplied(false)
+        setShowIPCorrection(false)
         onClose()
     }
 
@@ -795,6 +831,17 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                     </Button>
                 )}
             </DialogActions>
+
+            {/* IP Correction Dialog */}
+            {uploadResult && (
+                <IPCorrectionDialog
+                    open={showIPCorrection}
+                    onClose={handleIPCorrectionClose}
+                    onApply={handleIPCorrectionApply}
+                    sessionId={uploadResult.sessionId}
+                    analysisResult={ipAnalysis}
+                />
+            )}
         </Dialog>
     )
 }

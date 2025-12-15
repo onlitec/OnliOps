@@ -421,6 +421,286 @@ class ExcelProcessor {
             warnings
         };
     }
+
+    /**
+     * Detect if a value looks like a malformed IP (numeric without dots)
+     * @param {string|number} value - The value to check
+     * @returns {boolean}
+     */
+    detectMalformedIP(value) {
+        if (value === null || value === undefined) return false;
+
+        const str = String(value).trim();
+
+        // Must be numeric only (3-12 digits that could represent an IP)
+        if (!/^\d{1,12}$/.test(str)) return false;
+
+        // If it already has dots and is a valid IP, it's not malformed
+        if (ExcelProcessor.DATA_PATTERNS.ip.test(str)) return false;
+
+        // Numbers between 1 and 255 could be just host parts - too ambiguous
+        const num = parseInt(str, 10);
+        if (num >= 0 && num <= 255 && str.length <= 3) {
+            // Could be just a host number, flag as potentially malformed
+            return true;
+        }
+
+        // Numbers with 4+ digits that look like compressed IPs
+        if (str.length >= 4) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Analyze a dataset for malformed IPs
+     * @param {Array} devices - Array of device objects
+     * @returns {Object} Analysis result with malformed IPs
+     */
+    analyzeMalformedIPs(devices) {
+        const malformed = [];
+        const valid = [];
+        const samples = {};
+
+        devices.forEach((device, index) => {
+            const ipValue = device.ip_address;
+            if (!ipValue) return;
+
+            const str = String(ipValue).trim();
+
+            if (this.detectMalformedIP(str)) {
+                malformed.push({
+                    index,
+                    original: str,
+                    device
+                });
+                // Collect samples for pattern detection
+                if (!samples[str.length]) {
+                    samples[str.length] = [];
+                }
+                if (samples[str.length].length < 5) {
+                    samples[str.length].push(str);
+                }
+            } else if (ExcelProcessor.DATA_PATTERNS.ip.test(str)) {
+                valid.push(str);
+            }
+        });
+
+        // Try to detect network prefix from valid IPs
+        let detectedPrefix = null;
+        if (valid.length > 0) {
+            const prefixes = valid.map(ip => {
+                const parts = ip.split('.');
+                return `${parts[0]}.${parts[1]}.${parts[2]}`;
+            });
+            const prefixCounts = {};
+            prefixes.forEach(p => {
+                prefixCounts[p] = (prefixCounts[p] || 0) + 1;
+            });
+            const sorted = Object.entries(prefixCounts).sort((a, b) => b[1] - a[1]);
+            if (sorted.length > 0 && sorted[0][1] >= valid.length * 0.5) {
+                detectedPrefix = sorted[0][0];
+            }
+        }
+
+        return {
+            hasMalformed: malformed.length > 0,
+            malformedCount: malformed.length,
+            validCount: valid.length,
+            malformedDevices: malformed,
+            samples,
+            detectedPrefix,
+            suggestedAction: malformed.length > 0
+                ? (detectedPrefix ? 'use_detected_prefix' : 'request_prefix')
+                : 'none'
+        };
+    }
+
+    /**
+     * Suggest IP corrections based on network prefix
+     * @param {string} malformedIP - The malformed IP value
+     * @param {string} networkPrefix - Network prefix (e.g., "10.0.0" or "192.168.1")
+     * @param {string} strategy - Correction strategy ('last_digits' or 'split_octets')
+     * @returns {Array} Array of suggested corrections
+     */
+    suggestIPCorrection(malformedIP, networkPrefix, strategy = 'last_digits') {
+        const str = String(malformedIP).trim();
+        const suggestions = [];
+
+        if (!networkPrefix) {
+            return suggestions;
+        }
+
+        const prefixParts = networkPrefix.split('.').filter(p => p !== '');
+
+        if (strategy === 'last_digits') {
+            // Use last 1-3 digits as host part
+            for (let digits = 1; digits <= Math.min(3, str.length); digits++) {
+                const hostStr = str.slice(-digits);
+                const hostNum = parseInt(hostStr, 10);
+
+                if (hostNum >= 0 && hostNum <= 255) {
+                    // Build the full IP
+                    let fullIP;
+                    if (prefixParts.length === 3) {
+                        fullIP = `${prefixParts.join('.')}.${hostNum}`;
+                    } else if (prefixParts.length === 2) {
+                        // Need to figure out third octet
+                        const remaining = str.slice(0, -digits);
+                        const thirdOctet = remaining ? parseInt(remaining, 10) % 256 : 0;
+                        fullIP = `${prefixParts.join('.')}.${thirdOctet}.${hostNum}`;
+                    } else {
+                        continue;
+                    }
+
+                    // Validate the generated IP
+                    if (ExcelProcessor.DATA_PATTERNS.ip.test(fullIP)) {
+                        suggestions.push({
+                            ip: fullIP,
+                            confidence: digits === str.length ? 'high' : (digits >= 2 ? 'medium' : 'low'),
+                            method: `${networkPrefix}.x + últimos ${digits} dígitos`,
+                            hostDigits: digits
+                        });
+                    }
+                }
+            }
+        } else if (strategy === 'split_octets') {
+            // Try to intelligently split the number into octets
+            // For numbers like 10003 -> could be 10.0.0.3
+            const patterns = this.trySplitIntoOctets(str);
+            patterns.forEach(pattern => {
+                if (ExcelProcessor.DATA_PATTERNS.ip.test(pattern.ip)) {
+                    suggestions.push({
+                        ip: pattern.ip,
+                        confidence: pattern.confidence,
+                        method: 'divisão automática em octetos',
+                        hostDigits: null
+                    });
+                }
+            });
+        }
+
+        // Sort by confidence
+        const order = { high: 0, medium: 1, low: 2 };
+        suggestions.sort((a, b) => order[a.confidence] - order[b.confidence]);
+
+        return suggestions;
+    }
+
+    /**
+     * Try to split a numeric string into IP octets
+     * @param {string} str - Numeric string
+     * @returns {Array} Possible IP patterns
+     */
+    trySplitIntoOctets(str) {
+        const results = [];
+        const n = str.length;
+
+        // Try different split positions
+        // For a 4-digit number like "1003": could be 1.0.0.3, 10.0.3, 100.3
+        for (let i = 1; i <= Math.min(3, n - 1); i++) {
+            for (let j = i + 1; j <= Math.min(i + 3, n - 1); j++) {
+                for (let k = j + 1; k <= Math.min(j + 3, n); k++) {
+                    const a = str.slice(0, i);
+                    const b = str.slice(i, j);
+                    const c = str.slice(j, k);
+                    const d = str.slice(k);
+
+                    if (d.length === 0 || d.length > 3) continue;
+
+                    const octets = [a, b, c, d].map(o => parseInt(o, 10));
+
+                    if (octets.every(o => o >= 0 && o <= 255)) {
+                        const ip = octets.join('.');
+                        // Determine confidence based on common patterns
+                        let confidence = 'low';
+                        if (octets[0] === 10 || octets[0] === 192 || octets[0] === 172) {
+                            confidence = 'medium';
+                        }
+                        if (octets[0] === 10 && octets[1] === 0 && octets[2] === 0) {
+                            confidence = 'high';
+                        }
+
+                        results.push({ ip, confidence });
+                    }
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Apply IP corrections to a list of devices
+     * @param {Array} devices - Array of device objects
+     * @param {string} networkPrefix - Network prefix to use
+     * @param {number} hostDigits - Number of digits to use as host (1-3)
+     * @returns {Object} Corrected devices and stats
+     */
+    applyIPCorrections(devices, networkPrefix, hostDigits = 3) {
+        const corrected = [];
+        const stats = {
+            total: devices.length,
+            corrected: 0,
+            failed: 0,
+            unchanged: 0
+        };
+
+        devices.forEach(device => {
+            const ipValue = device.ip_address;
+
+            if (!ipValue) {
+                corrected.push({ ...device, _ipCorrected: false });
+                stats.unchanged++;
+                return;
+            }
+
+            const str = String(ipValue).trim();
+
+            // If already valid, keep it
+            if (ExcelProcessor.DATA_PATTERNS.ip.test(str)) {
+                corrected.push({ ...device, _ipCorrected: false });
+                stats.unchanged++;
+                return;
+            }
+
+            // Try to correct
+            if (this.detectMalformedIP(str)) {
+                const suggestions = this.suggestIPCorrection(str, networkPrefix, 'last_digits');
+
+                // Find the best suggestion matching the requested hostDigits
+                let bestSuggestion = suggestions.find(s => s.hostDigits === hostDigits);
+                if (!bestSuggestion && suggestions.length > 0) {
+                    bestSuggestion = suggestions[0]; // Use highest confidence
+                }
+
+                if (bestSuggestion) {
+                    corrected.push({
+                        ...device,
+                        ip_address: bestSuggestion.ip,
+                        _ipCorrected: true,
+                        _originalIP: str,
+                        _correctionMethod: bestSuggestion.method,
+                        _correctionConfidence: bestSuggestion.confidence
+                    });
+                    stats.corrected++;
+                } else {
+                    corrected.push({
+                        ...device,
+                        _ipCorrected: false,
+                        _ipError: 'Não foi possível corrigir o IP'
+                    });
+                    stats.failed++;
+                }
+            } else {
+                corrected.push({ ...device, _ipCorrected: false });
+                stats.unchanged++;
+            }
+        });
+
+        return { devices: corrected, stats };
+    }
 }
 
 module.exports = new ExcelProcessor();
