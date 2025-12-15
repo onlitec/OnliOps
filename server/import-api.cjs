@@ -1,6 +1,9 @@
 const express = require('express')
 const { Pool } = require('pg')
 const cors = require('cors')
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
 
 // AI Integration
 const aiRoutes = require('./routes/ai.cjs')
@@ -15,6 +18,11 @@ const telegram = require('./utils/telegram.cjs')
 const app = express()
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
+
+// Serve static branding files
+const brandingPath = path.join(__dirname, 'uploads', 'branding')
+app.use('/api/branding', express.static(brandingPath))
+
 
 const pool = new Pool({
     host: process.env.PGHOST || '127.0.0.1',
@@ -1224,6 +1232,171 @@ app.get('/api/logs/login', async (req, res) => {
         res.json(rows)
     } catch (error) {
         console.error('Error fetching login events:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === BRANDING UPLOAD ENDPOINTS ===
+
+// Configure multer for branding uploads
+const brandingStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, 'uploads', 'branding')
+        // Ensure directory exists
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true })
+        }
+        cb(null, uploadPath)
+    },
+    filename: (req, file, cb) => {
+        const type = req.params.type // 'logo' or 'favicon'
+        const ext = path.extname(file.originalname).toLowerCase()
+        const filename = `${type}${ext}`
+        cb(null, filename)
+    }
+})
+
+const brandingUpload = multer({
+    storage: brandingStorage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB max
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon']
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true)
+        } else {
+            cb(new Error('Tipo de arquivo não permitido. Use PNG, JPG, SVG, WebP ou ICO.'), false)
+        }
+    }
+})
+
+// Upload logo or favicon
+app.post('/api/branding/:type', brandingUpload.single('file'), async (req, res) => {
+    const { type } = req.params
+
+    if (!['logo', 'favicon'].includes(type)) {
+        return res.status(400).json({ error: 'Tipo inválido. Use "logo" ou "favicon".' })
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: 'Nenhum arquivo enviado.' })
+    }
+
+    try {
+        const filename = req.file.filename
+        const url = `/api/branding/${filename}`
+
+        // Save to settings
+        const settingKey = type === 'logo' ? 'branding_logo' : 'branding_favicon'
+        const value = JSON.stringify({ url, filename, updatedAt: new Date().toISOString() })
+
+        const { rows } = await pool.query(
+            'UPDATE system_settings SET value = $1, updated_at = NOW() WHERE key = $2 RETURNING *',
+            [value, settingKey]
+        )
+
+        if (rows.length === 0) {
+            await pool.query(
+                'INSERT INTO system_settings (key, value) VALUES ($1, $2)',
+                [settingKey, value]
+            )
+        }
+
+        // If it's a favicon, also copy to public folder for PWA
+        if (type === 'favicon') {
+            const publicFaviconPath = path.join(__dirname, '..', 'public', 'favicon-custom' + path.extname(filename))
+            fs.copyFileSync(req.file.path, publicFaviconPath)
+        }
+
+        console.log(`[Branding] ${type} uploaded: ${filename}`)
+
+        res.json({
+            success: true,
+            url,
+            filename,
+            message: `${type === 'logo' ? 'Logo' : 'Favicon'} atualizado com sucesso!`
+        })
+    } catch (error) {
+        console.error(`Error uploading ${type}:`, error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Get branding info
+app.get('/api/branding/info', async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            "SELECT key, value FROM system_settings WHERE key IN ('branding_logo', 'branding_favicon')"
+        )
+
+        const branding = {
+            logo: null,
+            favicon: null
+        }
+
+        rows.forEach(row => {
+            try {
+                const data = typeof row.value === 'string' ? JSON.parse(row.value) : row.value
+                if (row.key === 'branding_logo') {
+                    branding.logo = data
+                } else if (row.key === 'branding_favicon') {
+                    branding.favicon = data
+                }
+            } catch (e) {
+                // Invalid JSON, skip
+            }
+        })
+
+        res.json(branding)
+    } catch (error) {
+        console.error('Error fetching branding:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Delete branding (reset to default)
+app.delete('/api/branding/:type', async (req, res) => {
+    const { type } = req.params
+
+    if (!['logo', 'favicon'].includes(type)) {
+        return res.status(400).json({ error: 'Tipo inválido.' })
+    }
+
+    try {
+        const settingKey = type === 'logo' ? 'branding_logo' : 'branding_favicon'
+
+        // Get current file to delete
+        const { rows } = await pool.query(
+            'SELECT value FROM system_settings WHERE key = $1',
+            [settingKey]
+        )
+
+        if (rows.length > 0 && rows[0].value) {
+            try {
+                const data = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value
+                if (data.filename) {
+                    const filePath = path.join(__dirname, 'uploads', 'branding', data.filename)
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath)
+                    }
+                }
+            } catch (e) {
+                // Ignore parse errors
+            }
+        }
+
+        // Remove setting
+        await pool.query('DELETE FROM system_settings WHERE key = $1', [settingKey])
+
+        console.log(`[Branding] ${type} reset to default`)
+
+        res.json({
+            success: true,
+            message: `${type === 'logo' ? 'Logo' : 'Favicon'} resetado para o padrão.`
+        })
+    } catch (error) {
+        console.error(`Error deleting ${type}:`, error)
         res.status(500).json({ error: error.message })
     }
 })

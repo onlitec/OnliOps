@@ -440,5 +440,40 @@ export const api = {
         })
         if (!response.ok) throw new Error('Failed to create audit log')
         return response.json()
+    },
+
+    // === BRANDING ===
+    
+    getBrandingInfo: async (): Promise<{ logo: { url: string; filename: string } | null; favicon: { url: string; filename: string } | null }> => {
+        const response = await fetch(`${API_BASE}/branding/info`)
+        if (!response.ok) throw new Error('Failed to fetch branding info')
+        return response.json()
+    },
+
+    uploadBranding: async (type: 'logo' | 'favicon', file: File): Promise<{ success: boolean; url: string; filename: string; message: string }> => {
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const response = await fetch(`${API_BASE}/branding/${type}`, {
+            method: 'POST',
+            body: formData
+        })
+        
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || `Failed to upload ${type}`)
+        }
+        return response.json()
+    },
+
+    deleteBranding: async (type: 'logo' | 'favicon'): Promise<{ success: boolean; message: string }> => {
+        const response = await fetch(`${API_BASE}/branding/${type}`, {
+            method: 'DELETE'
+        })
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || `Failed to delete ${type}`)
+        }
+        return response.json()
     }
 }

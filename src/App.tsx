@@ -29,6 +29,7 @@ import Monitoring from "@/pages/Monitoring";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "@/store/slices/authSlice";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { BrandingProvider } from "@/context/BrandingContext";
 
 function AppInner() {
   const dispatch = useDispatch<AppDispatch>();
@@ -77,8 +78,10 @@ function AppInner() {
 export default function App() {
   return (
     <Provider store={store}>
-      <AppInner />
-      <PWAInstallPrompt />
+      <BrandingProvider>
+        <AppInner />
+        <PWAInstallPrompt />
+      </BrandingProvider>
     </Provider>
   );
 }

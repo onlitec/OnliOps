@@ -46,6 +46,7 @@ import { useAppDispatch, useAppSelector } from '../hooks/useApp'
 import { clearProjectContext, setCurrentProject } from '../store/slices/projectSlice'
 import { logout } from '../store/slices/authSlice'
 import { api } from '../services/api'
+import { useBranding } from '../context/BrandingContext'
 
 import { useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
@@ -70,6 +71,7 @@ export default function MainLayout() {
     const [devicesOpen, setDevicesOpen] = useState(true)
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [categories, setCategories] = useState<any[]>([])
+    const { logo } = useBranding()
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -144,38 +146,54 @@ export default function MainLayout() {
             />
             <Toolbar sx={{ px: 2, position: 'relative', zIndex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box
-                        sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 2,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)',
-                        }}
-                    >
-                        <DashboardIcon sx={{ color: 'white', fontSize: 20 }} />
-                    </Box>
-                    <Box>
-                        <Typography
-                            variant="h6"
-                            noWrap
+                    {logo?.url ? (
+                        <Box
+                            component="img"
+                            src={logo.url}
+                            alt="Logo"
                             sx={{
-                                fontWeight: 'bold',
-                                fontSize: '1.1rem',
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
+                                height: 36,
+                                width: 'auto',
+                                maxWidth: 140,
+                                objectFit: 'contain',
                             }}
-                        >
-                            OnliOps
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: -0.5 }}>
-                            Platform
-                        </Typography>
-                    </Box>
+                        />
+                    ) : (
+                        <>
+                            <Box
+                                sx={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 2,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)',
+                                }}
+                            >
+                                <DashboardIcon sx={{ color: 'white', fontSize: 20 }} />
+                            </Box>
+                            <Box>
+                                <Typography
+                                    variant="h6"
+                                    noWrap
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        fontSize: '1.1rem',
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                    }}
+                                >
+                                    OnliOps
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: -0.5 }}>
+                                    Platform
+                                </Typography>
+                            </Box>
+                        </>
+                    )}
                 </Box>
             </Toolbar>
             <Box sx={{ overflow: 'auto', flex: 1, position: 'relative', zIndex: 1, px: 1.5, pt: 1 }}>
