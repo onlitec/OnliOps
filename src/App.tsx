@@ -28,6 +28,7 @@ import GlobalDashboard from "@/pages/GlobalDashboard";
 import Monitoring from "@/pages/Monitoring";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "@/store/slices/authSlice";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 function AppInner() {
   const dispatch = useDispatch<AppDispatch>();
@@ -77,6 +78,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <AppInner />
+      <PWAInstallPrompt />
     </Provider>
   );
 }
