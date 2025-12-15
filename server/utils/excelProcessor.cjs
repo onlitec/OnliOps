@@ -388,7 +388,7 @@ class ExcelProcessor {
             const ipPattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
             if (!ipPattern.test(ip)) {
                 // Check if it looks like a header word
-                if (ExcelProcessor.HEADER_KEYWORDS.some(kw => ip.toLowerCase().includes(kw))) {
+                if (ExcelProcessor.HEADER_KEYWORDS.some(kw => ip.toLowerCase() === kw)) {
                     errors.push(`"${ip}" parece ser um título de coluna, não um IP`);
                 } else {
                     errors.push(`Formato de IP inválido: ${ip}`);
@@ -397,10 +397,29 @@ class ExcelProcessor {
         }
 
         // Serial validation - check if it looks like a header
+        // But allow real device serials that might contain keywords
         if (serial) {
             const serialLower = serial.toLowerCase();
-            if (ExcelProcessor.HEADER_KEYWORDS.some(kw => serialLower === kw || serialLower.includes(kw))) {
-                errors.push(`"${serial}" parece ser um título de coluna, não um serial`);
+
+            // Patterns that indicate a REAL device serial (not a header)
+            const deviceSerialPatterns = [
+                /^ds-/i,        // Hikvision
+                /^ipc-/i,       // HiLook/Dahua
+                /^dh-/i,        // Dahua
+                /^vip-/i,       // Intelbras
+                /^vhd-/i,       // Intelbras
+                /^axis/i,       // Axis
+                /^\d{10,}/,     // Long numeric (10+ digits)
+                /^[a-z0-9]{15,}$/i  // Long alphanumeric (15+ chars) = likely a serial
+            ];
+
+            const isRealSerial = deviceSerialPatterns.some(pattern => pattern.test(serial));
+
+            // Only flag as header if it's a short string matching header keywords exactly
+            if (!isRealSerial && serial.length < 15) {
+                if (ExcelProcessor.HEADER_KEYWORDS.some(kw => serialLower === kw)) {
+                    errors.push(`"${serial}" parece ser um título de coluna, não um serial`);
+                }
             }
         }
 

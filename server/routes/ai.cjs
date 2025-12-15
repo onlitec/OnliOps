@@ -310,26 +310,32 @@ router.post('/preview-import', async (req, res) => {
 
         const sessionData = JSON.parse(fs.readFileSync(sessionFile, 'utf8'));
 
-        // Extract devices from selected sheets
-        const allDevices = [];
+        let allDevices = [];
 
-        for (const config of sheetConfigs) {
-            if (!config.enabled) continue;
+        // Use corrected devices if IP correction was applied
+        if (sessionData.ipCorrectionApplied && sessionData.correctedDevices) {
+            console.log(`Using ${sessionData.correctedDevices.length} corrected devices from session`);
+            allDevices = sessionData.correctedDevices;
+        } else {
+            // Extract devices from selected sheets
+            for (const config of sheetConfigs) {
+                if (!config.enabled) continue;
 
-            const extractResult = excelProcessor.extractSheetData(
-                sessionData.filePath,
-                config.sheetName,
-                config.columnMapping
-            );
+                const extractResult = excelProcessor.extractSheetData(
+                    sessionData.filePath,
+                    config.sheetName,
+                    config.columnMapping
+                );
 
-            if (extractResult.success) {
-                extractResult.data.forEach(device => {
-                    allDevices.push({
-                        ...device,
-                        _sourceSheet: config.sheetName,
-                        _suggestedCategory: config.category || null
+                if (extractResult.success) {
+                    extractResult.data.forEach(device => {
+                        allDevices.push({
+                            ...device,
+                            _sourceSheet: config.sheetName,
+                            _suggestedCategory: config.category || null
+                        });
                     });
-                });
+                }
             }
         }
 
