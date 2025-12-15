@@ -298,6 +298,7 @@ class ExcelProcessor {
 
     /**
      * Auto-detect column mappings based on common header names
+     * Includes support for SADP Hikvision format
      * @param {Array} headers - Array of column headers from the sheet
      */
     autoDetectColumnMapping(headers) {
@@ -310,19 +311,40 @@ class ExcelProcessor {
             mac_address: null,
             location: null,
             status: null,
-            description: null
+            description: null,
+            firmware: null,
+            gateway: null,
+            subnet_mask: null,
+            http_port: null
         };
 
         const patterns = {
-            ip_address: /^(ip|ip_?address|endereco_?ip|endereço|ip_?addr|ipv4|ip\s*address)$/i,
-            serial_number: /^(serial|serial_?number|numero_?serie|número.*serie|sn|s\/n|device\s*serial)$/i,
-            model: /^(model|modelo|model_?name|product|device_?type|tipo)$/i,
+            // IP Address - including SADP format "IPv4 Address"
+            ip_address: /^(ip|ip_?address|endereco_?ip|endereço|ip_?addr|ipv4|ip\s*address|ipv4\s*address)$/i,
+            // Serial - including SADP format "Device Serial Number"
+            serial_number: /^(serial|serial_?number|numero_?serie|número.*serie|sn|s\/n|device\s*serial|device\s*serial\s*number)$/i,
+            // Model - including SADP format "Device Type"
+            model: /^(model|modelo|model_?name|product|device_?type|device\s*type|tipo|type)$/i,
+            // Manufacturer
             manufacturer: /^(manufacturer|fabricante|vendor|marca|brand|make)$/i,
-            hostname: /^(hostname|host|name|nome|device_?name|nome_?dispositivo|tag)$/i,
-            mac_address: /^(mac|mac_?address|endereco_?mac|physical.*address)$/i,
+            // Hostname - including SADP "Device Name"
+            hostname: /^(hostname|host|name|nome|device_?name|device\s*name|nome_?dispositivo|tag)$/i,
+            // MAC Address - SADP uses "MAC Address"
+            mac_address: /^(mac|mac_?address|mac\s*address|endereco_?mac|physical.*address)$/i,
+            // Location
             location: /^(location|local|localizacao|localização|site|rack|setor|area|área)$/i,
+            // Status
             status: /^(status|estado|state|ativo)$/i,
-            description: /^(description|descricao|descrição|notes|obs|observacao|observação|comments)$/i
+            // Description
+            description: /^(description|descricao|descrição|notes|obs|observacao|observação|comments)$/i,
+            // Firmware - SADP uses "Software Version"
+            firmware: /^(firmware|firmware_?version|software\s*version|software_?version|versao|versão|version)$/i,
+            // Gateway - SADP uses "IPv4 Gateway"
+            gateway: /^(gateway|ipv4\s*gateway|default\s*gateway|gw)$/i,
+            // Subnet Mask
+            subnet_mask: /^(subnet|subnet_?mask|mascara|máscara|netmask)$/i,
+            // HTTP Port
+            http_port: /^(http\s*port|http_?port|port|porta|web\s*port)$/i
         };
 
         headers.forEach(header => {

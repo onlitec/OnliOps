@@ -150,6 +150,7 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
         accept: {
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
             'application/vnd.ms-excel': ['.xls'],
+            'text/csv': ['.csv'],
         },
         maxFiles: 1,
         disabled: loading,
@@ -402,7 +403,7 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                                         {isDragActive ? 'Solte o arquivo aqui' : 'Arraste ou clique para selecionar'}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        Suporta arquivos Excel (.xlsx, .xls) com múltiplas abas
+                                        Suporta arquivos Excel (.xlsx, .xls) e CSV com múltiplas abas
                                     </Typography>
                                 </>
                             )}

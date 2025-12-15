@@ -32,13 +32,15 @@ const upload = multer({
         const allowedTypes = [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.ms-excel',
+            'text/csv',
+            'application/csv',
             'application/octet-stream'
         ];
         const ext = path.extname(file.originalname).toLowerCase();
-        if (allowedTypes.includes(file.mimetype) || ['.xlsx', '.xls'].includes(ext)) {
+        if (allowedTypes.includes(file.mimetype) || ['.xlsx', '.xls', '.csv'].includes(ext)) {
             cb(null, true);
         } else {
-            cb(new Error('Only Excel files (.xlsx, .xls) are allowed'));
+            cb(new Error('Only Excel files (.xlsx, .xls) and CSV files (.csv) are allowed'));
         }
     },
     limits: {
