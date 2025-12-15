@@ -24,8 +24,19 @@ const brandingPath = path.join(__dirname, 'uploads', 'branding')
 // Ensure branding directory exists
 if (!fs.existsSync(brandingPath)) {
     fs.mkdirSync(brandingPath, { recursive: true })
+    console.log(`[Branding] Created directory: ${brandingPath}`)
+} else {
+    console.log(`[Branding] Directory exists: ${brandingPath}`)
+    // List existing files
+    const files = fs.readdirSync(brandingPath)
+    console.log(`[Branding] Files found: ${files.length > 0 ? files.join(', ') : 'none'}`)
 }
-app.use('/api/branding/files', express.static(brandingPath))
+app.use('/api/branding/files', express.static(brandingPath, {
+    maxAge: '1d',
+    setHeaders: (res, filePath) => {
+        console.log(`[Branding] Serving file: ${filePath}`)
+    }
+}))
 
 
 const pool = new Pool({
@@ -1439,6 +1450,39 @@ app.get('/api/branding/info', async (req, res) => {
         res.json(branding)
     } catch (error) {
         console.error('Error fetching branding:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Debug endpoint - list branding files on disk
+app.get('/api/branding/debug', async (req, res) => {
+    try {
+        const brandingDir = path.join(__dirname, 'uploads', 'branding')
+        let files = []
+        let dirExists = false
+
+        if (fs.existsSync(brandingDir)) {
+            dirExists = true
+            files = fs.readdirSync(brandingDir).map(f => ({
+                name: f,
+                path: path.join(brandingDir, f),
+                size: fs.statSync(path.join(brandingDir, f)).size
+            }))
+        }
+
+        // Get settings from DB
+        const { rows } = await pool.query(
+            "SELECT key, value FROM system_settings WHERE key IN ('branding_logo', 'branding_favicon')"
+        )
+
+        res.json({
+            brandingDir,
+            dirExists,
+            filesOnDisk: files,
+            settingsInDb: rows,
+            __dirname
+        })
+    } catch (error) {
         res.status(500).json({ error: error.message })
     }
 })
