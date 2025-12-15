@@ -1393,12 +1393,6 @@ app.post('/api/branding/:type', brandingUpload.single('file'), async (req, res) 
             )
         }
 
-        // If it's a favicon, also copy to public folder for PWA
-        if (type === 'favicon') {
-            const publicFaviconPath = path.join(__dirname, '..', 'public', 'favicon-custom' + path.extname(filename))
-            fs.copyFileSync(req.file.path, publicFaviconPath)
-        }
-
         console.log(`[Branding] ${type} uploaded: ${filename}`)
 
         res.json({
