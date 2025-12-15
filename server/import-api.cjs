@@ -19,9 +19,13 @@ const app = express()
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
 
-// Serve static branding files
+// Serve static branding files at /api/branding/files/:filename
 const brandingPath = path.join(__dirname, 'uploads', 'branding')
-app.use('/api/branding', express.static(brandingPath))
+// Ensure branding directory exists
+if (!fs.existsSync(brandingPath)) {
+    fs.mkdirSync(brandingPath, { recursive: true })
+}
+app.use('/api/branding/files', express.static(brandingPath))
 
 
 const pool = new Pool({
@@ -1375,7 +1379,7 @@ app.post('/api/branding/:type', brandingUpload.single('file'), async (req, res) 
 
     try {
         const filename = req.file.filename
-        const url = `/api/branding/${filename}`
+        const url = `/api/branding/files/${filename}`
 
         // Save to settings
         const settingKey = type === 'logo' ? 'branding_logo' : 'branding_favicon'
