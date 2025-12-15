@@ -41,12 +41,101 @@ initializeDatabase(pool).then(success => {
     }
 })
 
+// === AUTHENTICATION ENDPOINTS ===
+
+// Login - supports email OR username
+app.post('/api/auth/login', async (req, res) => {
+    const { emailOrUsername, password } = req.body
+
+    if (!emailOrUsername || !password) {
+        return res.status(400).json({ error: 'Email/usuário e senha são obrigatórios' })
+    }
+
+    try {
+        // Search by email OR name (case-insensitive)
+        const { rows } = await pool.query(`
+            SELECT id, email, name, password_hash, role, created_at, updated_at 
+            FROM users 
+            WHERE LOWER(email) = LOWER($1) OR LOWER(name) = LOWER($1)
+            LIMIT 1
+        `, [emailOrUsername])
+
+        if (rows.length === 0) {
+            console.log(`[Auth] User not found: ${emailOrUsername}`)
+            return res.status(401).json({ error: 'Email ou senha inválidos' })
+        }
+
+        const user = rows[0]
+
+        // Verify password
+        // For now using simple comparison - in production use bcrypt
+        if (user.password_hash !== password) {
+            console.log(`[Auth] Invalid password for user: ${emailOrUsername}`)
+            return res.status(401).json({ error: 'Email ou senha inválidos' })
+        }
+
+        // Update last_login
+        await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id])
+
+        console.log(`[Auth] Login successful for: ${user.email}`)
+
+        res.json({
+            success: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role || 'viewer',
+                created_at: user.created_at,
+                updated_at: user.updated_at
+            }
+        })
+    } catch (error) {
+        console.error('[Auth] Login error:', error)
+        res.status(500).json({ error: 'Erro interno do servidor' })
+    }
+})
+
+// Register new user
+app.post('/api/auth/register', async (req, res) => {
+    const { email, password, name } = req.body
+
+    if (!email || !password || !name) {
+        return res.status(400).json({ error: 'Email, senha e nome são obrigatórios' })
+    }
+
+    try {
+        // Check if user already exists
+        const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email])
+        if (existing.rows.length > 0) {
+            return res.status(400).json({ error: 'Este email já está cadastrado' })
+        }
+
+        // Create user
+        const { rows } = await pool.query(`
+            INSERT INTO users (email, password_hash, name, role) 
+            VALUES ($1, $2, $3, 'viewer') 
+            RETURNING id, email, name, role, created_at
+        `, [email, password, name])
+
+        console.log(`[Auth] New user registered: ${email}`)
+
+        res.status(201).json({
+            success: true,
+            user: rows[0]
+        })
+    } catch (error) {
+        console.error('[Auth] Registration error:', error)
+        res.status(500).json({ error: 'Erro ao criar usuário' })
+    }
+})
+
 // === MULTI-TENANCY MIDDLEWARE ===
 const DEFAULT_PROJECT_ID = 'f6192f8f-1581-4d3f-86fc-fc7c4d86cf15'; // Default Project
 
 app.use(async (req, res, next) => {
     // Skip for global endpoints
-    if (req.path.startsWith('/api/clients') || req.path === '/api/health') {
+    if (req.path.startsWith('/api/clients') || req.path === '/api/health' || req.path.startsWith('/api/auth')) {
         return next();
     }
 
@@ -62,6 +151,7 @@ app.use(async (req, res, next) => {
 });
 
 // === CLIENTS & PROJECTS ENDPOINTS ===
+
 
 // List Clients
 app.get('/api/clients', async (req, res) => {
