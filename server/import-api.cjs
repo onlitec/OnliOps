@@ -784,9 +784,7 @@ app.post('/api/devices/import', async (req, res) => {
                 device.hostname || null,
                 device.status || 'active',
                 defaultVlanId,
-                device.status || 'active',
-                defaultVlanId,
-                `Importado/Atualizado via SADP em ${new Date().toLocaleString('pt-BR')}`,
+                `Importado via SADP em ${new Date().toLocaleString('pt-BR')}. Gateway: ${device.gateway || 'N/A'}, Máscara: ${device.subnet_mask || 'N/A'}, HTTP: ${device.http_port || 'N/A'}`,
                 req.projectId
             ])
 

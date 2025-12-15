@@ -38,46 +38,107 @@ const ImportModal: React.FC<ImportModalProps> = ({ onClose, onSuccess }) => {
 
     const detectDeviceType = (model: string): NetworkDevice['device_type'] => {
         const modelLower = model.toLowerCase()
-        if (modelLower.includes('ds-k') || modelLower.includes('controller')) return 'controller'
-        if (modelLower.includes('ds-2cd') || modelLower.includes('camera') || modelLower.includes('cam')) return 'camera'
-        if (modelLower.includes('nvr') || modelLower.includes('ds-7')) return 'nvr'
-        if (modelLower.includes('dvr')) return 'dvr'
+
+        // Hikvision Access Control (DS-K...)
+        if (modelLower.includes('ds-k1t') || modelLower.includes('ds-k2') || modelLower.includes('ds-k1a')) {
+            return 'controller' // Face/Fingerprint terminals, Access Controllers
+        }
+
+        // Hikvision Cameras (DS-2CD...)
+        if (modelLower.includes('ds-2cd') || modelLower.includes('ds-2td') ||
+            modelLower.includes('ipc-') || modelLower.includes('ds-2de')) {
+            return 'camera'
+        }
+
+        // Hikvision NVR (DS-7x16, DS-7x32, DS-96...)
+        if (modelLower.includes('nvr') || modelLower.match(/ds-7[67]\d{2}/i) ||
+            modelLower.match(/ds-96\d{2}/i) || modelLower.includes('nxi')) {
+            return 'nvr'
+        }
+
+        // Hikvision DVR (DS-7x04, DS-7x08, DS-7x16...)
+        if (modelLower.includes('dvr') || modelLower.match(/ds-7[1234]\d{2}/i)) {
+            return 'dvr'
+        }
+
+        // Network equipment
         if (modelLower.includes('switch')) return 'switch'
         if (modelLower.includes('router')) return 'router'
         if (modelLower.includes('ap') || modelLower.includes('wifi')) return 'ap_wifi'
+
+        // Termo cameras (DS-2TD...)
+        if (modelLower.includes('ds-2td')) return 'camera'
+
+        // Generic detection
+        if (modelLower.includes('camera') || modelLower.includes('cam')) return 'camera'
+        if (modelLower.includes('controller')) return 'controller'
+
         return 'other'
     }
 
     const mapSADPToDevice = (row: any): ParsedDevice => {
         const errors: string[] = []
 
-        // Campos obrigatórios
-        const serial = row['Device Serial Number'] || row['Serial Number'] || row['serial_number'] || ''
-        const ip = row['IPv4 Address'] || row['IP Address'] || row['ip_address'] || ''
-        const model = row['Device Type'] || row['Model'] || row['model'] || ''
+        // Normalizar nomes de campos (remover espaços extras e fazer case-insensitive)
+        const normalizedRow: Record<string, string> = {}
+        Object.keys(row).forEach(key => {
+            normalizedRow[key.trim().toLowerCase()] = String(row[key] || '').trim()
+        })
+
+        // Função auxiliar para buscar campo por múltiplos nomes
+        const getField = (...fieldNames: string[]): string => {
+            for (const name of fieldNames) {
+                const value = normalizedRow[name.toLowerCase()]
+                if (value) return value
+            }
+            // Buscar também no objeto original
+            for (const name of fieldNames) {
+                if (row[name]) return String(row[name]).trim()
+            }
+            return ''
+        }
+
+        // Campos obrigatórios - suporta formato SADP Hikvision
+        const serial = getField('Device Serial Number', 'device serial number', 'Serial Number', 'serial_number', 'serial')
+        const ip = getField('IPv4 Address', 'ipv4 address', 'IP Address', 'ip_address', 'ip')
+        const model = getField('Device Type', 'device type', 'Model', 'model', 'tipo')
 
         if (!serial) errors.push('Serial number missing')
         if (!ip) errors.push('IP address missing')
         if (!model) errors.push('Model missing')
 
-        // Detectar fabricante
+        // Detectar fabricante pelo modelo
         let manufacturer = 'Hikvision' // Default para SADP
-        if (model.toLowerCase().includes('dahua')) manufacturer = 'Dahua'
-        if (model.toLowerCase().includes('intelbras')) manufacturer = 'Intelbras'
+        const modelLower = model.toLowerCase()
+        if (modelLower.includes('dahua') || modelLower.includes('dh-')) manufacturer = 'Dahua'
+        if (modelLower.includes('intelbras') || modelLower.includes('vip-') || modelLower.includes('vhd-')) manufacturer = 'Intelbras'
+        if (modelLower.includes('axis')) manufacturer = 'Axis'
+        if (modelLower.includes('ipc-') && !modelLower.includes('ds-')) manufacturer = 'HiLook'
+
+        // Mapear MAC address (formato Hikvision: bc-5e-33-57-5a-98)
+        let macAddress = getField('MAC Address', 'mac address', 'mac_address', 'mac')
+        // Normalizar MAC (converter - para : se necessário)
+        if (macAddress) {
+            macAddress = macAddress.toUpperCase().replace(/-/g, ':')
+        }
+
+        // Status - Hikvision usa "Active" ou "Inactive"
+        const rawStatus = getField('Status', 'status')
+        const status = rawStatus.toLowerCase() === 'active' ? 'active' : 'inactive'
 
         return {
-            serial_number: serial.trim(),
-            ip_address: ip.trim().replace(/\s+/g, ''), // Remove espaços do IP
-            mac_address: row['MAC Address'] || row['mac_address'] || undefined,
-            model: model.trim(),
+            serial_number: serial,
+            ip_address: ip.replace(/\s+/g, ''), // Remove espaços do IP  
+            mac_address: macAddress || undefined,
+            model: model,
             manufacturer,
             device_type: detectDeviceType(model),
-            firmware_version: row['Software Version'] || row['firmware'] || undefined,
-            hostname: row['Device Name'] || row['hostname'] || undefined,
-            status: (row['Status'] || '').toLowerCase() === 'active' ? 'active' : 'inactive',
-            gateway: row['IPv4 Gateway'] || row['gateway'] || undefined,
-            subnet_mask: row['Subnet Mask'] || row['subnet'] || undefined,
-            http_port: row['HTTP Port'] || row['Port'] || undefined,
+            firmware_version: getField('Software Version', 'software version', 'firmware', 'Firmware Version', 'versão') || undefined,
+            hostname: getField('Device Name', 'device name', 'hostname', 'Name', 'nome') || undefined,
+            status,
+            gateway: getField('IPv4 Gateway', 'ipv4 gateway', 'gateway', 'Gateway') || undefined,
+            subnet_mask: getField('Subnet Mask', 'subnet mask', 'subnet', 'Mascara') || undefined,
+            http_port: getField('HTTP Port', 'http port', 'Port', 'port', 'Porta') || undefined,
             errors: errors.length > 0 ? errors : undefined
         }
     }
