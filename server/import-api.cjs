@@ -456,40 +456,6 @@ app.get('/api/platform/metrics', async (req, res) => {
     }
 });
 
-// Get projects summary for dashboard
-app.get('/api/platform/projects/summary', async (req, res) => {
-    try {
-        const { rows } = await pool.query(`
-            SELECT 
-                p.id, p.name, p.status,
-                c.id as client_id, c.name as client_name,
-                COUNT(DISTINCT d.id) as device_count,
-                COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'active') as alert_count,
-                MAX(d.updated_at) as last_activity
-            FROM projects p
-            LEFT JOIN clients c ON p.client_id = c.id
-            LEFT JOIN network_devices d ON p.id = d.project_id
-            LEFT JOIN alerts a ON p.id = a.project_id
-            GROUP BY p.id, c.id
-            ORDER BY p.name
-        `);
-
-        res.json(rows.map(r => ({
-            id: r.id,
-            name: r.name,
-            client: { id: r.client_id, name: r.client_name },
-            status: r.status,
-            metrics: {
-                devices: parseInt(r.device_count) || 0,
-                alerts: parseInt(r.alert_count) || 0,
-                lastActivity: r.last_activity
-            }
-        })));
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 // Endpoint para listar VLANs
 app.get('/api/vlans', async (req, res) => {
     try {
