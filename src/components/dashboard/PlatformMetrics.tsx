@@ -22,7 +22,7 @@ export default function PlatformMetrics({ data }: PlatformMetricsProps) {
             value: data.totalClients,
             icon: Users,
             color: '#3b82f6',
-            link: '/admin/clients',
+            link: '/clients',
         },
         {
             label: 'Projetos',
