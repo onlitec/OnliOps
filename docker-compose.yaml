@@ -83,6 +83,7 @@ services:
       start_period: 15s
     networks:
       - onliops-network
+      - coolify
 
   # ==========================================
   # React Frontend (Nginx) - MAIN SERVICE
@@ -113,6 +114,7 @@ services:
       start_period: 10s
     networks:
       - onliops-network
+      - coolify
 
 # ==========================================
 # Volumes (Persistent Data)
@@ -132,3 +134,5 @@ networks:
   onliops-network:
     name: onliops-network
     driver: bridge
+  coolify:
+    external: true
