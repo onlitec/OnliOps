@@ -3,6 +3,10 @@
 # ============================================
 FROM node:20-alpine
 
+LABEL org.opencontainers.image.source="https://github.com/onlitec/OnliOps"
+LABEL org.opencontainers.image.description="OnliOps Backend API"
+LABEL org.opencontainers.image.licenses="MIT"
+
 WORKDIR /app
 
 # Install dependencies for native modules

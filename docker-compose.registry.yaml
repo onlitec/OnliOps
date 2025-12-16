@@ -1,0 +1,130 @@
+# ============================================
+# OnliOps - Docker Compose (Registry Images)
+# ============================================
+# Deploy via pre-built Docker Hub images
+# Use this file in Coolify for faster deploys
+# ============================================
+
+services:
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  database:
+    image: postgres:15-alpine
+    container_name: onliops-database
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-onliops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-onliops}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onliops} -d ${POSTGRES_DB:-onliops}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - onliops-network
+
+  # ==========================================
+  # Ollama - Local AI Model Server
+  # ==========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: onliops-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    expose:
+      - "11434"
+    networks:
+      - onliops-network
+
+  # ==========================================
+  # Node.js Backend API (from Docker Hub)
+  # ==========================================
+  backend:
+    image: onlitec/onliops-backend:latest
+    container_name: onliops-api
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      # Database
+      PGHOST: database
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-onliops}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      PGDATABASE: ${POSTGRES_DB:-onliops}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-onliops}:${POSTGRES_PASSWORD:-changeme}@database:5432/${POSTGRES_DB:-onliops}
+      # Ollama (internal Docker network)
+      OLLAMA_URL: http://ollama:11434
+      AI_MODEL: ${AI_MODEL:-phi3}
+      # External AI APIs (optional)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    volumes:
+      - uploads_data:/app/uploads
+    expose:
+      - "3001"
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - onliops-network
+      - coolify
+
+  # ==========================================
+  # React Frontend (from Docker Hub) - MAIN SERVICE
+  # ==========================================
+  frontend:
+    image: onlitec/onliops-frontend:latest
+    container_name: onliops-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    labels:
+      - "coolify.managed=true"
+      - "coolify.expose=true"
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - onliops-network
+      - coolify
+
+# ==========================================
+# Volumes (Persistent Data)
+# ==========================================
+volumes:
+  postgres_data:
+    name: onliops-postgres-data
+  uploads_data:
+    name: onliops-uploads
+  ollama_data:
+    name: onliops-ollama-models
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  onliops-network:
+    name: onliops-network
+    driver: bridge
+  coolify:
+    external: true
