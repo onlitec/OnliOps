@@ -301,6 +301,11 @@ async function runMigrations(pool) {
         {
             name: 'add_location_to_network_devices',
             sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS location VARCHAR(200);`
+        },
+        // Add notes column to network_devices
+        {
+            name: 'add_notes_to_network_devices',
+            sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS notes TEXT;`
         }
     ];
 
