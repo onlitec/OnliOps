@@ -286,6 +286,21 @@ async function runMigrations(pool) {
         {
             name: 'create_idx_password_request_logs_device',
             sql: `CREATE INDEX IF NOT EXISTS idx_password_request_logs_device ON password_request_logs(device_id);`
+        },
+        // Add serial_number column to network_devices
+        {
+            name: 'add_serial_number_to_network_devices',
+            sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS serial_number VARCHAR(100);`
+        },
+        // Add firmware_version column to network_devices
+        {
+            name: 'add_firmware_version_to_network_devices',
+            sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS firmware_version VARCHAR(50);`
+        },
+        // Add location column to network_devices
+        {
+            name: 'add_location_to_network_devices',
+            sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS location VARCHAR(200);`
         }
     ];
 
