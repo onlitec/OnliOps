@@ -117,11 +117,17 @@ export default function MainLayout() {
     ]
 
     // Use fetched categories or fallback to defaults if empty (though we populated DB)
-    const deviceItems = categories.length > 0 ? categories.map(c => ({
+    const categoryItems = categories.length > 0 ? categories.map(c => ({
         text: c.name,
         icon: iconMap[c.icon] || <DevicesOther />,
         path: `/devices/${c.slug}`
     })) : []
+
+    // Add "Todos" item at the beginning
+    const deviceItems = [
+        { text: 'Todos', icon: <DevicesOther />, path: '/devices/all' },
+        ...categoryItems
+    ]
 
     const networkItems = [
         { text: 'VLANs', icon: <SettingsEthernet />, path: '/vlans' },

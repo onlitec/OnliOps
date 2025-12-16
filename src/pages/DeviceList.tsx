@@ -58,8 +58,8 @@ export default function DeviceList() {
     const applyFilters = () => {
         let filtered = [...devices]
 
-        // Category filter
-        if (category) {
+        // Category filter (skip if 'all' or not specified)
+        if (category && category !== 'all') {
             if (category === 'other') {
                 // Show devices with type 'other' OR types that don't match any known category
                 const categorySlugs = categories.map(c => c.slug).filter(s => s !== 'other')
