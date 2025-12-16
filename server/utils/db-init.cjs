@@ -306,6 +306,11 @@ async function runMigrations(pool) {
         {
             name: 'add_notes_to_network_devices',
             sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS notes TEXT;`
+        },
+        // Add unique constraint on ip_address + project_id for UPSERT
+        {
+            name: 'add_unique_ip_project_to_network_devices',
+            sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_network_devices_ip_project ON network_devices(ip_address, project_id);`
         }
     ];
 

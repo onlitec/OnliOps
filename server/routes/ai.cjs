@@ -467,7 +467,7 @@ router.post('/confirm-import', async (req, res) => {
                         serial_number, ip_address, mac_address, model, manufacturer,
                         device_type, category_id, hostname, status, vlan_id, location, notes, project_id
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                    ON CONFLICT (ip_address) DO UPDATE SET
+                    ON CONFLICT (ip_address, project_id) DO UPDATE SET
                         serial_number = EXCLUDED.serial_number,
                         mac_address = EXCLUDED.mac_address,
                         model = EXCLUDED.model,
