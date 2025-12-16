@@ -621,9 +621,9 @@ app.post('/api/network_devices', async (req, res) => {
     let vlanId = device.vlan_id
     if (!vlanId) {
         try {
-            const vlanResult = await pool.query('SELECT vlan_id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1', [req.projectId])
+            const vlanResult = await pool.query('SELECT id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1', [req.projectId])
             if (vlanResult.rows.length > 0) {
-                vlanId = vlanResult.rows[0].vlan_id
+                vlanId = vlanResult.rows[0].id
             } else {
                 vlanId = 1 // Fallback
             }
@@ -742,9 +742,9 @@ app.post('/api/devices/import', async (req, res) => {
     // Buscar VLAN padrão
     let defaultVlanId = null
     try {
-        const vlanResult = await pool.query('SELECT vlan_id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1', [req.projectId])
+        const vlanResult = await pool.query('SELECT id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1', [req.projectId])
         if (vlanResult.rows.length > 0) {
-            defaultVlanId = vlanResult.rows[0].vlan_id
+            defaultVlanId = vlanResult.rows[0].id
             console.log(`Using VLAN ID: ${defaultVlanId}`)
         } else {
             console.error('No VLANs found in database!')

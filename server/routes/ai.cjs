@@ -426,17 +426,28 @@ router.post('/confirm-import', async (req, res) => {
         };
 
         // Get default VLAN
-        let defaultVlanId = 1;
+        let defaultVlanId = null;
         try {
             const vlanResult = await dbPool.query(
-                'SELECT vlan_id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1',
+                'SELECT id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1',
                 [req.projectId]
             );
             if (vlanResult.rows.length > 0) {
-                defaultVlanId = vlanResult.rows[0].vlan_id;
+                defaultVlanId = vlanResult.rows[0].id;
             }
         } catch (e) {
             console.error('Error getting VLAN:', e);
+        }
+
+        // Get category map (slug -> id)
+        const categoryMap = {};
+        try {
+            const catResult = await dbPool.query('SELECT id, slug FROM device_categories');
+            catResult.rows.forEach(row => {
+                categoryMap[row.slug] = row.id;
+            });
+        } catch (e) {
+            console.error('Error getting categories:', e);
         }
 
         for (const device of devices) {
@@ -447,17 +458,22 @@ router.post('/confirm-import', async (req, res) => {
             }
 
             try {
+                // Resolve category slug to UUID
+                const categorySlug = device._suggestedCategory || 'other';
+                const categoryId = categoryMap[categorySlug] || categoryMap['other'] || null;
+
                 await dbPool.query(`
                     INSERT INTO network_devices (
                         serial_number, ip_address, mac_address, model, manufacturer,
-                        device_type, hostname, status, vlan_id, location, notes, project_id
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                        device_type, category_id, hostname, status, vlan_id, location, notes, project_id
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                     ON CONFLICT (ip_address) DO UPDATE SET
                         serial_number = EXCLUDED.serial_number,
                         mac_address = EXCLUDED.mac_address,
                         model = EXCLUDED.model,
                         manufacturer = EXCLUDED.manufacturer,
                         device_type = EXCLUDED.device_type,
+                        category_id = EXCLUDED.category_id,
                         hostname = EXCLUDED.hostname,
                         notes = EXCLUDED.notes,
                         updated_at = NOW()
@@ -467,7 +483,8 @@ router.post('/confirm-import', async (req, res) => {
                     device.mac_address || null,
                     device.model || 'Desconhecido',
                     device.manufacturer || 'Desconhecido',
-                    device._suggestedCategory || 'other',
+                    categorySlug,
+                    categoryId,
                     device.hostname || null,
                     'active',
                     defaultVlanId,
