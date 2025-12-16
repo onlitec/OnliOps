@@ -315,7 +315,23 @@ router.post('/preview-import', async (req, res) => {
         // Use corrected devices if IP correction was applied
         if (sessionData.ipCorrectionApplied && sessionData.correctedDevices) {
             console.log(`Using ${sessionData.correctedDevices.length} corrected devices from session`);
-            allDevices = sessionData.correctedDevices;
+
+            // Build sheet category map from sheetConfigs
+            const sheetCategoryMap = {};
+            sheetConfigs.forEach(config => {
+                if (config.enabled && config.category) {
+                    sheetCategoryMap[config.sheetName] = config.category;
+                }
+            });
+
+            // Apply categories to corrected devices based on their source sheet
+            allDevices = sessionData.correctedDevices.map(device => {
+                const categoryFromSheet = sheetCategoryMap[device._sourceSheet];
+                return {
+                    ...device,
+                    _suggestedCategory: device._suggestedCategory || categoryFromSheet || null
+                };
+            });
         } else {
             // Extract devices from selected sheets
             for (const config of sheetConfigs) {
