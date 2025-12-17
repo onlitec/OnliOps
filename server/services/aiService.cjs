@@ -4,6 +4,7 @@
  */
 
 const axios = require('axios');
+const promptLoader = require('../prompts/index.cjs');
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
 const DEFAULT_MODEL = process.env.AI_MODEL || 'phi3';
@@ -12,6 +13,7 @@ class AIService {
     constructor() {
         this.ollamaUrl = OLLAMA_URL;
         this.model = DEFAULT_MODEL;
+        this.promptLoader = promptLoader;
     }
 
     /**
@@ -70,6 +72,101 @@ class AIService {
                 error: error.message
             };
         }
+    }
+
+    /**
+     * Stream AI response token by token
+     * @param {string} prompt - The prompt to send
+     * @param {Object} options - Options (model, temperature, maxTokens)
+     * @param {Function} onToken - Callback called for each token received
+     * @returns {Promise<Object>} Final result with full response
+     */
+    async chatStream(prompt, options = {}, onToken = () => { }) {
+        const http = require('http');
+        const https = require('https');
+
+        return new Promise((resolve, reject) => {
+            const url = new URL(`${this.ollamaUrl}/api/generate`);
+            const isHttps = url.protocol === 'https:';
+            const httpModule = isHttps ? https : http;
+
+            const postData = JSON.stringify({
+                model: options.model || this.model,
+                prompt: prompt,
+                stream: true,
+                options: {
+                    temperature: options.temperature || 0.3,
+                    num_predict: options.maxTokens || 2048,
+                }
+            });
+
+            const requestOptions = {
+                hostname: url.hostname,
+                port: url.port || (isHttps ? 443 : 80),
+                path: url.pathname,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(postData)
+                },
+                timeout: 120000
+            };
+
+            let fullResponse = '';
+            let model = '';
+
+            const req = httpModule.request(requestOptions, (res) => {
+                res.on('data', (chunk) => {
+                    const lines = chunk.toString().split('\n').filter(line => line.trim());
+
+                    for (const line of lines) {
+                        try {
+                            const data = JSON.parse(line);
+
+                            if (data.response) {
+                                fullResponse += data.response;
+                                onToken(data.response, {
+                                    done: data.done || false,
+                                    context: data.context
+                                });
+                            }
+
+                            if (data.model) {
+                                model = data.model;
+                            }
+
+                            if (data.done) {
+                                resolve({
+                                    success: true,
+                                    response: fullResponse,
+                                    model: model,
+                                    totalDuration: data.total_duration
+                                });
+                            }
+                        } catch (e) {
+                            // Skip malformed JSON lines
+                        }
+                    }
+                });
+
+                res.on('error', (error) => {
+                    reject({ success: false, error: error.message });
+                });
+            });
+
+            req.on('error', (error) => {
+                console.error('Stream request error:', error.message);
+                reject({ success: false, error: error.message });
+            });
+
+            req.on('timeout', () => {
+                req.destroy();
+                reject({ success: false, error: 'Request timeout' });
+            });
+
+            req.write(postData);
+            req.end();
+        });
     }
 
     /**
@@ -141,43 +238,71 @@ Return ONLY the JSON array, no additional text.`;
     }
 
     /**
-     * Analyze a spreadsheet and identify device sheets
-     * @param {Object} workbookInfo - Information about sheets in the workbook
-     */
+ * Analyze a spreadsheet and identify device sheets
+ * @param {Object} workbookInfo - Information about sheets in the workbook
+ */
     async analyzeSpreadsheet(workbookInfo) {
-        const prompt = `You are analyzing an Excel spreadsheet for a network inventory system.
+        const prompt = `You are an intelligent assistant analyzing an Excel/CSV spreadsheet for a network inventory and security system. Your goal is to identify sheets that contain network device data (like cameras, NVRs, switches, routers, access points, etc).
 
-The workbook contains the following sheets:
-${JSON.stringify(workbookInfo.sheets, null, 2)}
+## SPREADSHEET INFORMATION
 
-Each sheet contains columns like:
-${JSON.stringify(workbookInfo.sampleColumns, null, 2)}
+**Sheets in workbook:**
+${workbookInfo.sheets.map(s => `- "${s.name}": ${s.rowCount} rows`).join('\n')}
 
-Instructions:
-1. Identify which sheets contain device data
-2. For each device sheet, determine the likely device type (cameras, nvrs, switches, routers, servers, access_points)
-3. Identify the key columns for device import (IP, Serial, Model, Manufacturer, etc.)
+**Column headers by sheet:**
+${Object.entries(workbookInfo.sampleColumns).map(([sheet, cols]) =>
+            `"${sheet}": [${cols.map(c => `"${c}"`).join(', ')}]`
+        ).join('\n')}
 
-Return a JSON object with:
+**Sample data from each sheet:**
+${JSON.stringify(workbookInfo.sheets.map(s => ({ name: s.name, sample: s.sampleData?.slice(0, 2) })), null, 2)}
+
+## YOUR TASK
+
+1. **Identify device sheets**: Look for columns that contain IP addresses, serial numbers, MAC addresses, model names, or device-related terms
+2. **Determine device category**: Based on sheet name and sample data, suggest what type of devices are in each sheet (camera, nvr, switch, router, access_point, server, firewall, reader, controller, other)
+3. **Map columns intelligently**: Match spreadsheet columns to these standard fields:
+   - ip_address: IPv4 address (e.g., 192.168.1.1)
+   - serial_number: Device serial (e.g., DS-2CD2085FWD-I20190501)
+   - tag: Device label/identifier (e.g., CAM-01, RACK-02)
+   - model: Device model name (e.g., DS-2CD2085FWD-I)
+   - manufacturer: Brand name (e.g., Hikvision, Dahua, Intelbras)
+   - hostname: Device name (e.g., Camera-Lobby)
+   - mac_address: MAC address (e.g., 00:11:22:33:44:55)
+   - location: Physical location (e.g., Building A, Floor 2)
+
+## COLUMN DETECTION TIPS
+
+- Common IP column names: "IP", "IP Address", "IPv4 Address", "Endereço IP", "IPv4"
+- Common Serial column names: "Serial", "Serial Number", "Device Serial Number", "S/N", "Nº Série"
+- Common Model column names: "Model", "Modelo", "Device Type", "Tipo", "Product"
+- Common MAC column names: "MAC", "MAC Address", "Endereço MAC", "Physical Address"
+- SADP Hikvision format uses: "IPv4 Address", "Device Serial Number", "Device Type", "MAC Address"
+
+## RESPONSE FORMAT
+
+Return ONLY a JSON object (no markdown, no explanation):
 {
   "sheets": [
     {
-      "name": "Sheet name",
-      "isDeviceSheet": true/false,
-      "suggestedCategory": "category_slug or null",
+      "name": "Sheet name exactly as shown",
+      "isDeviceSheet": true,
+      "suggestedCategory": "camera|nvr|switch|router|access_point|server|firewall|reader|controller|other",
+      "confidence": "high|medium|low",
       "columnMapping": {
-        "ip_address": "column_name_in_sheet",
-        "serial_number": "column_name_in_sheet",
-        "model": "column_name_in_sheet",
-        "manufacturer": "column_name_in_sheet",
-        "hostname": "column_name_in_sheet"
+        "ip_address": "exact column name or null",
+        "serial_number": "exact column name or null",
+        "tag": "exact column name or null",
+        "model": "exact column name or null",
+        "manufacturer": "exact column name or null",
+        "hostname": "exact column name or null",
+        "mac_address": "exact column name or null",
+        "location": "exact column name or null"
       },
       "estimatedDeviceCount": number
     }
   ]
-}
-
-Return ONLY the JSON object, no additional text.`;
+}`;
 
         const result = await this.chat(prompt, { temperature: 0.1 });
 
@@ -187,9 +312,15 @@ Return ONLY the JSON object, no additional text.`;
 
         try {
             let jsonStr = result.response.trim();
+            // Remove markdown code blocks if present
             const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
             if (jsonMatch) {
                 jsonStr = jsonMatch[1].trim();
+            }
+            // Also try to find JSON object directly
+            const objectMatch = jsonStr.match(/\{[\s\S]*\}/);
+            if (objectMatch) {
+                jsonStr = objectMatch[0];
             }
 
             const analysis = JSON.parse(jsonStr);
@@ -199,6 +330,8 @@ Return ONLY the JSON object, no additional text.`;
                 model: result.model
             };
         } catch (parseError) {
+            console.error('Failed to parse AI spreadsheet analysis:', parseError.message);
+            console.log('Raw AI response:', result.response);
             return {
                 success: false,
                 error: 'Failed to parse AI response',
@@ -272,6 +405,74 @@ Return ONLY the JSON object.`;
             };
         }
     }
+
+    /**
+     * Identify and analyze Hikvision devices using specialized prompt
+     * @param {Array} devices - Array of device objects with model, serial_number fields
+     * @returns {Object} Analysis results for each device
+     */
+    async identifyHikvisionDevices(devices) {
+        // Load the specialized Hikvision prompt
+        const prompt = this.promptLoader.getPrompt('identify_hikvision', {
+            devices: devices.slice(0, 30) // Limit to 30 devices per batch
+        });
+
+        if (!prompt) {
+            console.error('Failed to load identify_hikvision prompt');
+            return { success: false, error: 'Prompt file not found' };
+        }
+
+        const result = await this.chat(prompt.content, {
+            temperature: prompt.temperature,
+            maxTokens: prompt.maxTokens
+        });
+
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
+        try {
+            let jsonStr = result.response.trim();
+
+            // Handle markdown code blocks
+            const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (jsonMatch) {
+                jsonStr = jsonMatch[1].trim();
+            }
+
+            // Try to find JSON array or object
+            const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
+            const objectMatch = jsonStr.match(/\{[\s\S]*\}/);
+
+            if (arrayMatch) {
+                jsonStr = arrayMatch[0];
+            } else if (objectMatch) {
+                jsonStr = objectMatch[0];
+            }
+
+            const analysis = JSON.parse(jsonStr);
+            return {
+                success: true,
+                analysis: Array.isArray(analysis) ? analysis : [analysis],
+                model: result.model
+            };
+        } catch (parseError) {
+            console.error('Error parsing Hikvision analysis:', parseError.message);
+            return {
+                success: false,
+                error: 'Failed to parse AI response',
+                rawResponse: result.response
+            };
+        }
+    }
+
+    /**
+     * Get list of available prompts
+     */
+    getAvailablePrompts() {
+        return this.promptLoader.listPrompts();
+    }
 }
 
 module.exports = new AIService();
+

@@ -305,6 +305,7 @@ class ExcelProcessor {
         const mapping = {
             ip_address: null,
             serial_number: null,
+            tag: null,
             model: null,
             manufacturer: null,
             hostname: null,
@@ -323,6 +324,8 @@ class ExcelProcessor {
             ip_address: /^(ip|ip_?address|endereco_?ip|endereço|ip_?addr|ipv4|ip\s*address|ipv4\s*address)$/i,
             // Serial - including SADP format "Device Serial Number"
             serial_number: /^(serial|serial_?number|numero_?serie|número.*serie|sn|s\/n|device\s*serial|device\s*serial\s*number)$/i,
+            // Tag - device label/identifier
+            tag: /^(tag|etiqueta|label|identificador|codigo|código|cod)$/i,
             // Model - including SADP format "Device Type"
             model: /^(model|modelo|model_?name|product|device_?type|device\s*type|tipo|type)$/i,
             // Manufacturer

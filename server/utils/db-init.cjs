@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS network_devices (
     hostname VARCHAR(100),
     serial_number VARCHAR(100),
     firmware_version VARCHAR(50),
+    tag VARCHAR(50),
     location VARCHAR(200),
     notes TEXT,
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'maintenance', 'error')),
@@ -311,6 +312,21 @@ async function runMigrations(pool) {
         {
             name: 'add_unique_ip_project_to_network_devices',
             sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_network_devices_ip_project ON network_devices(ip_address, project_id);`
+        },
+        // Add tag column to network_devices
+        {
+            name: 'add_tag_to_network_devices',
+            sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS tag VARCHAR(50);`
+        },
+        // Add index for tag column
+        {
+            name: 'add_idx_network_devices_tag',
+            sql: `CREATE INDEX IF NOT EXISTS idx_network_devices_tag ON network_devices(tag);`
+        },
+        // Add category_id column to network_devices
+        {
+            name: 'add_category_id_to_network_devices',
+            sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES device_categories(id) ON DELETE SET NULL;`
         }
     ];
 

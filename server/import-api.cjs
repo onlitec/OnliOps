@@ -1509,8 +1509,20 @@ app.locals.pool = pool
 // Mount AI routes
 app.use('/api/ai', aiRoutes)
 
+// Mount Prompts routes
+const promptsRoutes = require('./routes/prompts.cjs')
+app.use('/api/prompts', promptsRoutes)
+
+// Mount AI Streaming routes (SSE)
+const aiStreamRoutes = require('./routes/ai-stream.cjs')
+app.use('/api/ai/stream', aiStreamRoutes)
+
 const PORT = 3001
 app.listen(PORT, () => {
     console.log(`Import API server running on http://localhost:${PORT}`)
     console.log(`AI endpoints available at http://localhost:${PORT}/api/ai`)
+    console.log(`AI Streaming available at http://localhost:${PORT}/api/ai/stream`)
+    console.log(`Prompts API available at http://localhost:${PORT}/api/prompts`)
 })
+
+

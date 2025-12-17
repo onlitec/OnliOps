@@ -130,6 +130,7 @@ export interface NetworkDevice {
   updated_at: string
   // Inventory fields
   serial_number?: string
+  tag?: string
   firmware_version?: string
   admin_username?: string
   admin_password_enc?: string

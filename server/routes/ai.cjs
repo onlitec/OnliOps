@@ -312,24 +312,24 @@ router.post('/preview-import', async (req, res) => {
 
         let allDevices = [];
 
+        // Build sheet category map from sheetConfigs
+        const sheetCategoryMap = {};
+        sheetConfigs.forEach(config => {
+            if (config.enabled && config.category) {
+                sheetCategoryMap[config.sheetName] = config.category;
+            }
+        });
+
         // Use corrected devices if IP correction was applied
         if (sessionData.ipCorrectionApplied && sessionData.correctedDevices) {
             console.log(`Using ${sessionData.correctedDevices.length} corrected devices from session`);
-
-            // Build sheet category map from sheetConfigs
-            const sheetCategoryMap = {};
-            sheetConfigs.forEach(config => {
-                if (config.enabled && config.category) {
-                    sheetCategoryMap[config.sheetName] = config.category;
-                }
-            });
 
             // Apply categories to corrected devices based on their source sheet
             allDevices = sessionData.correctedDevices.map(device => {
                 const categoryFromSheet = sheetCategoryMap[device._sourceSheet];
                 return {
                     ...device,
-                    _suggestedCategory: device._suggestedCategory || categoryFromSheet || null
+                    _suggestedCategory: categoryFromSheet || device._suggestedCategory || null
                 };
             });
         } else {
@@ -355,8 +355,23 @@ router.post('/preview-import', async (req, res) => {
             }
         }
 
+        // IMPORTANT: Filter out completely empty devices BEFORE validation
+        // A device is considered empty if it has no meaningful data in key fields
+        const nonEmptyDevices = allDevices.filter(device => {
+            const hasIP = device.ip_address && String(device.ip_address).trim() !== '';
+            const hasSerial = device.serial_number && String(device.serial_number).trim() !== '';
+            const hasMAC = device.mac_address && String(device.mac_address).trim() !== '';
+            const hasModel = device.model && String(device.model).trim() !== '';
+            const hasHostname = device.hostname && String(device.hostname).trim() !== '';
+
+            // Keep device if it has at least one meaningful field
+            return hasIP || hasSerial || hasMAC || hasModel || hasHostname;
+        });
+
+        console.log(`Filtered ${allDevices.length - nonEmptyDevices.length} empty rows, ${nonEmptyDevices.length} devices remaining`);
+
         // Validate devices
-        const devicesWithValidation = allDevices.map(device => {
+        const devicesWithValidation = nonEmptyDevices.map(device => {
             const validation = excelProcessor.validateDevice(device);
             return {
                 ...device,
@@ -376,6 +391,7 @@ router.post('/preview-import', async (req, res) => {
         if (devicesNeedingCategorization.length > 0) {
             const aiAvailable = await aiService.isAvailable();
             if (aiAvailable) {
+                console.log(`Categorizing ${devicesNeedingCategorization.length} devices with AI`);
                 const catResult = await aiService.categorizeDevices(
                     devicesNeedingCategorization.map(d => ({
                         model: d.model,
@@ -409,7 +425,8 @@ router.post('/preview-import', async (req, res) => {
             validDevices: devicesWithValidation.filter(d => d._validation.valid).length,
             invalidDevices: devicesWithValidation.filter(d => !d._validation.valid).length,
             devices: devicesWithValidation,
-            aiCategorization: aiCategorization ? true : false
+            aiCategorization: aiCategorization ? true : false,
+            filteredEmptyRows: allDevices.length - nonEmptyDevices.length
         });
     } catch (error) {
         console.error('Preview error:', error);
@@ -480,14 +497,15 @@ router.post('/confirm-import', async (req, res) => {
 
                 await dbPool.query(`
                     INSERT INTO network_devices (
-                        serial_number, ip_address, mac_address, model, manufacturer,
+                        serial_number, ip_address, mac_address, model, manufacturer, tag,
                         device_type, category_id, hostname, status, vlan_id, location, notes, project_id
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
                     ON CONFLICT (ip_address, project_id) DO UPDATE SET
                         serial_number = EXCLUDED.serial_number,
                         mac_address = EXCLUDED.mac_address,
                         model = EXCLUDED.model,
                         manufacturer = EXCLUDED.manufacturer,
+                        tag = EXCLUDED.tag,
                         device_type = EXCLUDED.device_type,
                         category_id = EXCLUDED.category_id,
                         hostname = EXCLUDED.hostname,
@@ -499,6 +517,7 @@ router.post('/confirm-import', async (req, res) => {
                     device.mac_address || null,
                     device.model || 'Desconhecido',
                     device.manufacturer || 'Desconhecido',
+                    device.tag || null,
                     categorySlug,
                     categoryId,
                     device.hostname || null,
@@ -532,6 +551,89 @@ router.post('/confirm-import', async (req, res) => {
         });
     } catch (error) {
         console.error('Import error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/ai/check-duplicates
+ * Check if devices already exist in database
+ */
+router.post('/check-duplicates', async (req, res) => {
+    const { devices } = req.body;
+    const dbPool = req.app.locals.pool;
+
+    if (!devices || !Array.isArray(devices)) {
+        return res.status(400).json({ error: 'devices array is required' });
+    }
+
+    if (!dbPool) {
+        return res.status(500).json({ error: 'Database connection not available' });
+    }
+
+    try {
+        // Extract IPs and serials to check
+        const ips = devices.map(d => d.ip_address).filter(Boolean);
+        const serials = devices.map(d => d.serial_number).filter(Boolean);
+
+        if (ips.length === 0 && serials.length === 0) {
+            return res.json({
+                success: true,
+                totalIncoming: devices.length,
+                duplicates: 0,
+                newDevices: devices.length,
+                duplicateDetails: [],
+                uniqueDevices: devices
+            });
+        }
+
+        // Query existing devices
+        const existingResult = await dbPool.query(`
+            SELECT id, ip_address, serial_number, tag, hostname, model, manufacturer, updated_at
+            FROM network_devices 
+            WHERE project_id = $1 
+              AND (ip_address::text = ANY($2) OR serial_number = ANY($3))
+        `, [req.projectId, ips, serials]);
+
+        const existingByIP = new Map();
+        const existingBySerial = new Map();
+        existingResult.rows.forEach(row => {
+            if (row.ip_address) existingByIP.set(row.ip_address, row);
+            if (row.serial_number) existingBySerial.set(row.serial_number, row);
+        });
+
+        // Mark duplicates
+        const duplicates = [];
+        const newDevices = [];
+
+        devices.forEach((device, index) => {
+            const byIP = existingByIP.get(device.ip_address);
+            const bySerial = existingBySerial.get(device.serial_number);
+            const existing = byIP || bySerial;
+
+            if (existing) {
+                duplicates.push({
+                    index,
+                    incoming: device,
+                    existing: existing,
+                    matchedBy: byIP ? 'ip_address' : 'serial_number',
+                    action: 'update' // default action
+                });
+            } else {
+                newDevices.push(device);
+            }
+        });
+
+        res.json({
+            success: true,
+            totalIncoming: devices.length,
+            duplicates: duplicates.length,
+            newDevices: newDevices.length,
+            duplicateDetails: duplicates,
+            uniqueDevices: newDevices
+        });
+    } catch (error) {
+        console.error('Check duplicates error:', error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -38,9 +38,12 @@ export interface UploadResult {
 export interface DevicePreview {
     ip_address?: string;
     serial_number?: string;
+    tag?: string;
     model?: string;
     manufacturer?: string;
     hostname?: string;
+    mac_address?: string;
+    location?: string;
     _sourceSheet: string;
     _suggestedCategory?: string;
     _categoryConfidence?: 'high' | 'medium' | 'low';
@@ -107,6 +110,32 @@ export interface IPCorrectionResult {
         serial: string;
         model: string;
     }>;
+}
+
+export interface DuplicateItem {
+    index: number;
+    incoming: DevicePreview;
+    existing: {
+        id: string;
+        ip_address: string;
+        serial_number?: string;
+        tag?: string;
+        hostname?: string;
+        model?: string;
+        manufacturer?: string;
+        updated_at?: string;
+    };
+    matchedBy: 'ip_address' | 'serial_number';
+    action: 'update' | 'skip' | 'merge';
+}
+
+export interface DuplicateCheckResult {
+    success: boolean;
+    totalIncoming: number;
+    duplicates: number;
+    newDevices: number;
+    duplicateDetails: DuplicateItem[];
+    uniqueDevices: DevicePreview[];
 }
 
 
@@ -289,6 +318,24 @@ class AIApiService {
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.error || 'IP correction failed');
+        }
+
+        return response.json();
+    }
+
+    /**
+     * Check for duplicate devices in database
+     */
+    async checkDuplicates(devices: DevicePreview[]): Promise<DuplicateCheckResult> {
+        const response = await fetch(`${API_BASE}/check-duplicates`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({ devices }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Duplicate check failed');
         }
 
         return response.json();

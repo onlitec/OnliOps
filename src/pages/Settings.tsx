@@ -8,7 +8,8 @@ import {
   Description as LogsIcon,
   Notifications as NotificationsIcon,
   Palette as ThemeIcon,
-  FolderSpecial as ProjectsIcon
+  FolderSpecial as ProjectsIcon,
+  Psychology as AIIcon
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 
@@ -70,6 +71,13 @@ export default function Settings() {
       description: 'Personalize tema, cores e layout do sistema',
       icon: <ThemeIcon sx={{ fontSize: 48, color: '#6366f1' }} />,
       path: '/settings/appearance',
+      available: true
+    },
+    {
+      title: 'Inteligência Artificial',
+      description: 'Configure prompts de IA e análise inteligente',
+      icon: <AIIcon sx={{ fontSize: 48, color: '#14b8a6' }} />,
+      path: '/settings/ai',
       available: true
     }
   ]

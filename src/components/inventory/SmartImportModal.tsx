@@ -43,11 +43,14 @@ import {
     AutoAwesome,
     TableChart,
     FilePresent,
+    Terminal as TerminalIcon,
 } from '@mui/icons-material'
 import { useDropzone } from 'react-dropzone'
-import aiApi, { SheetInfo, DevicePreview, UploadResult, IPAnalysisResult, IPCorrectionResult } from '../../services/aiService'
+import aiApi, { SheetInfo, DevicePreview, UploadResult, IPAnalysisResult, IPCorrectionResult, DuplicateCheckResult, DuplicateItem } from '../../services/aiService'
 import { api } from '../../services/api'
 import IPCorrectionDialog from './IPCorrectionDialog'
+import DuplicateReviewDialog from './DuplicateReviewDialog'
+import AITerminal from './AITerminal'
 
 interface SmartImportModalProps {
     open: boolean
@@ -96,6 +99,13 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
     const [showIPCorrection, setShowIPCorrection] = useState(false)
     const [ipAnalysis, setIpAnalysis] = useState<IPAnalysisResult | null>(null)
     const [ipCorrectionApplied, setIpCorrectionApplied] = useState(false)
+
+    // Duplicate Detection
+    const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
+    const [duplicateInfo, setDuplicateInfo] = useState<DuplicateCheckResult | null>(null)
+
+    // AI Terminal visibility
+    const [showAITerminal, setShowAITerminal] = useState(false)
 
     useEffect(() => {
         if (open) {
@@ -235,8 +245,30 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
 
         try {
             const validDevices = previewDevices.filter(d => d._validation.valid)
+
+            // Check for duplicates first
+            const duplicateCheck = await aiApi.checkDuplicates(validDevices)
+            if (duplicateCheck.duplicates > 0) {
+                setDuplicateInfo(duplicateCheck)
+                setShowDuplicateDialog(true)
+                setLoading(false)
+                return // Wait for user decision
+            }
+
+            // No duplicates, proceed with import
+            await executeImport(validDevices)
+        } catch (err: any) {
+            setError(err.message || 'Erro ao importar dispositivos')
+            setLoading(false)
+        }
+    }
+
+    const executeImport = async (devicesToImport: DevicePreview[]) => {
+        setLoading(true)
+
+        try {
             const BATCH_SIZE = 50
-            const totalDevices = validDevices.length
+            const totalDevices = devicesToImport.length
             const totalBatches = Math.ceil(totalDevices / BATCH_SIZE)
 
             // Initialize progress
@@ -259,7 +291,7 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
             for (let i = 0; i < totalBatches; i++) {
                 const batchStart = i * BATCH_SIZE
                 const batchEnd = Math.min(batchStart + BATCH_SIZE, totalDevices)
-                const batch = validDevices.slice(batchStart, batchEnd)
+                const batch = devicesToImport.slice(batchStart, batchEnd)
 
                 // Update progress before processing batch
                 setImportProgress(prev => ({
@@ -302,6 +334,39 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
         }
     }
 
+    const handleDuplicateDecisions = async (decisions: DuplicateItem[]) => {
+        setShowDuplicateDialog(false)
+
+        // Filter devices based on user decisions
+        const devicesToSkip = new Set(
+            decisions.filter(d => d.action === 'skip').map(d => d.index)
+        )
+
+        // Get all valid devices
+        const validDevices = previewDevices.filter(d => d._validation.valid)
+
+        // Filter out skipped devices
+        const devicesToImport = validDevices.filter((_, index) => {
+            const duplicate = decisions.find(d => d.index === index)
+            return !duplicate || duplicate.action !== 'skip'
+        })
+
+        // Mark devices for merge
+        const mergeIndices = new Set(
+            decisions.filter(d => d.action === 'merge').map(d => d.index)
+        )
+
+        // Apply merge logic: combine with existing data (for future implementation)
+        // For now, 'update' and 'merge' both use the upsert behavior
+
+        if (devicesToImport.length === 0) {
+            setError('Nenhum dispositivo para importar após as decisões de duplicatas')
+            return
+        }
+
+        await executeImport(devicesToImport)
+    }
+
     const handleIPCorrectionApply = (result: IPCorrectionResult) => {
         setIpCorrectionApplied(true)
         setShowIPCorrection(false)
@@ -325,6 +390,8 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
         setIpAnalysis(null)
         setIpCorrectionApplied(false)
         setShowIPCorrection(false)
+        setDuplicateInfo(null)
+        setShowDuplicateDialog(false)
         onClose()
     }
 
@@ -539,7 +606,7 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                                                 Mapeamento de Colunas
                                             </Typography>
                                             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
-                                                {['ip_address', 'serial_number', 'model', 'manufacturer', 'hostname', 'mac_address'].map(field => (
+                                                {['ip_address', 'serial_number', 'tag', 'model', 'manufacturer', 'hostname', 'mac_address'].map(field => (
                                                     <FormControl key={field} size="small" fullWidth>
                                                         <InputLabel>{field.replace('_', ' ')}</InputLabel>
                                                         <Select
@@ -774,6 +841,24 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                         )}
                     </Box>
                 )}
+
+                {/* AI Terminal - Toggle Button and Component */}
+                {aiAvailable && activeStep >= 1 && activeStep < 3 && (
+                    <Box sx={{ mt: 2 }}>
+                        <Button
+                            size="small"
+                            startIcon={<TerminalIcon />}
+                            onClick={() => setShowAITerminal(!showAITerminal)}
+                            sx={{
+                                color: showAITerminal ? '#58a6ff' : 'text.secondary',
+                                textTransform: 'none',
+                            }}
+                        >
+                            {showAITerminal ? 'Ocultar Terminal IA' : 'Mostrar Terminal IA'}
+                        </Button>
+                        <AITerminal visible={showAITerminal} />
+                    </Box>
+                )}
             </DialogContent>
 
             <DialogActions sx={{ p: 2 }}>
@@ -840,6 +925,16 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                     onApply={handleIPCorrectionApply}
                     sessionId={uploadResult.sessionId}
                     analysisResult={ipAnalysis}
+                />
+            )}
+
+            {/* Duplicate Review Dialog */}
+            {duplicateInfo && (
+                <DuplicateReviewDialog
+                    open={showDuplicateDialog}
+                    duplicates={duplicateInfo.duplicateDetails}
+                    onConfirm={handleDuplicateDecisions}
+                    onClose={() => setShowDuplicateDialog(false)}
                 />
             )}
         </Dialog>

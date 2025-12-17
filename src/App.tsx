@@ -23,6 +23,7 @@ import BackupRestore from "@/pages/settings/BackupRestore";
 import SystemLogs from "@/pages/settings/SystemLogs";
 import NotificationSettings from "@/pages/settings/NotificationSettings";
 import AppearanceSettings from "@/pages/settings/AppearanceSettings";
+import AISettings from "@/pages/settings/AISettings";
 import ClientList from "@/pages/ClientList";
 import GlobalDashboard from "@/pages/GlobalDashboard";
 import Monitoring from "@/pages/Monitoring";
@@ -64,6 +65,7 @@ function AppInner() {
         <Route path="settings/logs" element={<SystemLogs />} />
         <Route path="settings/notifications" element={<NotificationSettings />} />
         <Route path="settings/appearance" element={<AppearanceSettings />} />
+        <Route path="settings/ai" element={<AISettings />} />
 
         {/* Redirects/Fallbacks */}
         <Route path="inventory" element={<Navigate to="/dashboard" replace />} />
