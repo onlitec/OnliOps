@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import {
     Box,
     Typography,
@@ -15,29 +15,42 @@ import {
     ExpandLess,
     SmartToy,
     Circle,
+    Clear,
 } from '@mui/icons-material'
 
 interface AITerminalProps {
     visible?: boolean
+    defaultExpanded?: boolean
     onToggle?: () => void
 }
 
 interface TerminalLine {
-    type: 'token' | 'status' | 'error' | 'result'
+    type: 'token' | 'status' | 'error' | 'result' | 'info' | 'success' | 'warning'
     content: string
     timestamp: Date
 }
 
-export default function AITerminal({ visible = true, onToggle }: AITerminalProps) {
+export interface AITerminalRef {
+    addLog: (type: TerminalLine['type'], content: string) => void
+    clearTerminal: () => void
+    startStreaming: () => void
+    stopStreaming: () => void
+    setStreamContent: (content: string) => void
+    appendStreamContent: (content: string) => void
+}
+
+const AITerminal = forwardRef<AITerminalRef, AITerminalProps>(({
+    visible = true,
+    defaultExpanded = true,
+    onToggle
+}, ref) => {
     const theme = useTheme()
-    const [expanded, setExpanded] = useState(true)
+    const [expanded, setExpanded] = useState(defaultExpanded)
     const [lines, setLines] = useState<TerminalLine[]>([])
     const [currentOutput, setCurrentOutput] = useState('')
     const [isStreaming, setIsStreaming] = useState(false)
     const [tokenCount, setTokenCount] = useState(0)
-    const [stage, setStage] = useState<string>('')
     const terminalRef = useRef<HTMLDivElement>(null)
-    const eventSourceRef = useRef<EventSource | null>(null)
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -46,16 +59,7 @@ export default function AITerminal({ visible = true, onToggle }: AITerminalProps
         }
     }, [currentOutput, lines])
 
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            if (eventSourceRef.current) {
-                eventSourceRef.current.close()
-            }
-        }
-    }, [])
-
-    const addLine = (type: TerminalLine['type'], content: string) => {
+    const addLog = (type: TerminalLine['type'], content: string) => {
         setLines(prev => [...prev, { type, content, timestamp: new Date() }])
     }
 
@@ -63,98 +67,61 @@ export default function AITerminal({ visible = true, onToggle }: AITerminalProps
         setLines([])
         setCurrentOutput('')
         setTokenCount(0)
-        setStage('')
     }
 
-    // Exposed method to start streaming analysis
-    const startAnalysis = async (endpoint: string, data: any): Promise<any> => {
-        return new Promise((resolve, reject) => {
-            clearTerminal()
-            setIsStreaming(true)
-            addLine('status', `🚀 Iniciando análise com IA...`)
-
-            // Use fetch with streaming instead of EventSource for POST
-            fetch(`/api/ai/stream/${endpoint}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            }).then(response => {
-                const reader = response.body?.getReader()
-                const decoder = new TextDecoder()
-                let buffer = ''
-                let result: any = null
-
-                const processStream = async () => {
-                    if (!reader) return
-
-                    try {
-                        while (true) {
-                            const { done, value } = await reader.read()
-
-                            if (done) {
-                                setIsStreaming(false)
-                                resolve(result)
-                                break
-                            }
-
-                            buffer += decoder.decode(value, { stream: true })
-                            const lines = buffer.split('\n')
-                            buffer = lines.pop() || ''
-
-                            for (const line of lines) {
-                                if (line.startsWith('data: ')) {
-                                    try {
-                                        const event = JSON.parse(line.slice(6))
-
-                                        switch (event.type) {
-                                            case 'token':
-                                                setCurrentOutput(prev => prev + event.content)
-                                                setTokenCount(event.count || 0)
-                                                break
-                                            case 'status':
-                                                addLine('status', event.message)
-                                                if (event.stage) setStage(event.stage)
-                                                break
-                                            case 'error':
-                                                addLine('error', `❌ ${event.message}`)
-                                                break
-                                            case 'result':
-                                                result = event
-                                                addLine('result', '✅ Análise concluída')
-                                                break
-                                            case 'end':
-                                                // Stream ended
-                                                break
-                                        }
-                                    } catch (e) {
-                                        // Skip malformed events
-                                    }
-                                }
-                            }
-                        }
-                    } catch (error: any) {
-                        setIsStreaming(false)
-                        addLine('error', `❌ ${error.message}`)
-                        reject(error)
-                    }
-                }
-
-                processStream()
-            }).catch(error => {
-                setIsStreaming(false)
-                addLine('error', `❌ Erro de conexão: ${error.message}`)
-                reject(error)
-            })
-        })
+    const startStreaming = () => {
+        setIsStreaming(true)
     }
 
-    // Expose startAnalysis through ref or context
-    // For now, we'll expose it via window for simplicity
+    const stopStreaming = () => {
+        setIsStreaming(false)
+    }
+
+    const setStreamContent = (content: string) => {
+        setCurrentOutput(content)
+    }
+
+    const appendStreamContent = (content: string) => {
+        setCurrentOutput(prev => prev + content)
+        setTokenCount(prev => prev + 1)
+    }
+
+    // Expose methods via ref
+    useImperativeHandle(ref, () => ({
+        addLog,
+        clearTerminal,
+        startStreaming,
+        stopStreaming,
+        setStreamContent,
+        appendStreamContent,
+    }))
+
+    // Also expose via window for backward compatibility
     useEffect(() => {
-        (window as any).aiTerminal = { startAnalysis, clearTerminal }
+        (window as any).aiTerminal = {
+            addLog,
+            clearTerminal,
+            startStreaming,
+            stopStreaming,
+            setStreamContent,
+            appendStreamContent,
+        }
+        return () => {
+            delete (window as any).aiTerminal
+        }
     }, [])
+
+    const getLineColor = (type: TerminalLine['type']) => {
+        switch (type) {
+            case 'error': return '#f85149'
+            case 'warning': return '#f0883e'
+            case 'status': return '#58a6ff'
+            case 'result':
+            case 'success': return '#3fb950'
+            case 'info': return '#a5d6ff'
+            default: return '#c9d1d9'
+        }
+    }
 
     if (!visible) return null
 
@@ -204,13 +171,18 @@ export default function AITerminal({ visible = true, onToggle }: AITerminalProps
                         </Typography>
                     )}
                 </Box>
-                <IconButton size="small" onClick={() => setExpanded(!expanded)}>
-                    {expanded ? (
-                        <ExpandLess sx={{ color: '#8b949e' }} />
-                    ) : (
-                        <ExpandMore sx={{ color: '#8b949e' }} />
-                    )}
-                </IconButton>
+                <Box display="flex" gap={0.5}>
+                    <IconButton size="small" onClick={clearTerminal} title="Limpar">
+                        <Clear sx={{ color: '#8b949e', fontSize: 18 }} />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => setExpanded(!expanded)}>
+                        {expanded ? (
+                            <ExpandLess sx={{ color: '#8b949e' }} />
+                        ) : (
+                            <ExpandMore sx={{ color: '#8b949e' }} />
+                        )}
+                    </IconButton>
+                </Box>
             </Box>
 
             {/* Progress bar */}
@@ -230,12 +202,12 @@ export default function AITerminal({ visible = true, onToggle }: AITerminalProps
                     ref={terminalRef}
                     sx={{
                         p: 2,
-                        maxHeight: 300,
-                        minHeight: 150,
+                        maxHeight: 250,
+                        minHeight: 120,
                         overflowY: 'auto',
                         fontFamily: '"Fira Code", "Monaco", "Consolas", monospace',
-                        fontSize: '0.85rem',
-                        lineHeight: 1.6,
+                        fontSize: '0.8rem',
+                        lineHeight: 1.5,
                         '&::-webkit-scrollbar': {
                             width: 8,
                         },
@@ -248,38 +220,47 @@ export default function AITerminal({ visible = true, onToggle }: AITerminalProps
                         },
                     }}
                 >
-                    {/* Status lines */}
+                    {/* Log lines */}
                     {lines.map((line, index) => (
                         <Box
                             key={index}
                             sx={{
-                                color: line.type === 'error' ? '#f85149' :
-                                    line.type === 'status' ? '#58a6ff' :
-                                        line.type === 'result' ? '#3fb950' : '#c9d1d9',
-                                mb: 0.5,
+                                color: getLineColor(line.type),
+                                mb: 0.3,
+                                display: 'flex',
+                                alignItems: 'flex-start',
                             }}
                         >
                             <Typography
                                 component="span"
-                                sx={{ color: '#6e7681', mr: 1, fontSize: '0.75rem' }}
+                                sx={{
+                                    color: '#6e7681',
+                                    mr: 1,
+                                    fontSize: '0.7rem',
+                                    flexShrink: 0,
+                                    fontFamily: 'inherit',
+                                }}
                             >
                                 [{line.timestamp.toLocaleTimeString()}]
                             </Typography>
-                            {line.content}
+                            <span>{line.content}</span>
                         </Box>
                     ))}
 
                     {/* Streaming output */}
                     {currentOutput && (
-                        <Box sx={{ color: '#c9d1d9', whiteSpace: 'pre-wrap' }}>
+                        <Box sx={{ color: '#8b949e', whiteSpace: 'pre-wrap', mt: 1, fontSize: '0.75rem' }}>
+                            <Typography variant="caption" sx={{ color: '#6e7681', display: 'block', mb: 0.5 }}>
+                                Resposta da IA:
+                            </Typography>
                             {currentOutput}
                             {isStreaming && (
                                 <Box
                                     component="span"
                                     sx={{
                                         display: 'inline-block',
-                                        width: 8,
-                                        height: 16,
+                                        width: 6,
+                                        height: 12,
                                         bgcolor: '#58a6ff',
                                         ml: 0.5,
                                         animation: 'blink 1s infinite',
@@ -295,25 +276,28 @@ export default function AITerminal({ visible = true, onToggle }: AITerminalProps
 
                     {/* Empty state */}
                     {lines.length === 0 && !currentOutput && (
-                        <Box sx={{ color: '#6e7681', fontStyle: 'italic' }}>
-                            <SmartToy sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
-                            Aguardando análise de IA...
+                        <Box sx={{ color: '#6e7681', fontStyle: 'italic', display: 'flex', alignItems: 'center' }}>
+                            <SmartToy sx={{ fontSize: 16, mr: 1 }} />
+                            Aguardando atividade da IA...
                         </Box>
                     )}
                 </Box>
             </Collapse>
         </Box>
     )
-}
+})
 
-// Export hook for using terminal
+AITerminal.displayName = 'AITerminal'
+
+export default AITerminal
+
+// Hook for using terminal from anywhere
 export const useAITerminal = () => {
-    const startAnalysis = async (endpoint: string, data: any) => {
+    const addLog = (type: TerminalLine['type'], content: string) => {
         const terminal = (window as any).aiTerminal
         if (terminal) {
-            return terminal.startAnalysis(endpoint, data)
+            terminal.addLog(type, content)
         }
-        throw new Error('AITerminal not mounted')
     }
 
     const clearTerminal = () => {
@@ -323,5 +307,26 @@ export const useAITerminal = () => {
         }
     }
 
-    return { startAnalysis, clearTerminal }
+    const startStreaming = () => {
+        const terminal = (window as any).aiTerminal
+        if (terminal) {
+            terminal.startStreaming()
+        }
+    }
+
+    const stopStreaming = () => {
+        const terminal = (window as any).aiTerminal
+        if (terminal) {
+            terminal.stopStreaming()
+        }
+    }
+
+    const appendStreamContent = (content: string) => {
+        const terminal = (window as any).aiTerminal
+        if (terminal) {
+            terminal.appendStreamContent(content)
+        }
+    }
+
+    return { addLog, clearTerminal, startStreaming, stopStreaming, appendStreamContent }
 }

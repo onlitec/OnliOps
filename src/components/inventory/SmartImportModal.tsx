@@ -50,7 +50,7 @@ import aiApi, { SheetInfo, DevicePreview, UploadResult, IPAnalysisResult, IPCorr
 import { api } from '../../services/api'
 import IPCorrectionDialog from './IPCorrectionDialog'
 import DuplicateReviewDialog from './DuplicateReviewDialog'
-import AITerminal from './AITerminal'
+import AITerminal, { useAITerminal } from './AITerminal'
 
 interface SmartImportModalProps {
     open: boolean
@@ -67,6 +67,11 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [aiAvailable, setAiAvailable] = useState<boolean | null>(null)
+    const [uploadProgress, setUploadProgress] = useState(0)
+
+    // File upload tracking
+    const [uploadingFile, setUploadingFile] = useState<{ name: string; size: number } | null>(null)
+    const [uploadPhase, setUploadPhase] = useState<'uploading' | 'processing' | 'analyzing'>('uploading')
 
     // Step 1: Upload
     const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
@@ -104,8 +109,11 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
     const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
     const [duplicateInfo, setDuplicateInfo] = useState<DuplicateCheckResult | null>(null)
 
-    // AI Terminal visibility
-    const [showAITerminal, setShowAITerminal] = useState(false)
+    // AI Terminal visibility - always show by default
+    const [showAITerminal, setShowAITerminal] = useState(true)
+
+    // AI Terminal hook for logging
+    const aiTerminal = useAITerminal()
 
     useEffect(() => {
         if (open) {
@@ -136,43 +144,120 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         if (acceptedFiles.length === 0) return
 
+        const file = acceptedFiles[0]
+        const fileSizeKB = file.size / 1024
+        const fileSizeMB = fileSizeKB / 1024
+
+        // Store file info for display
+        setUploadingFile({ name: file.name, size: file.size })
+        setUploadPhase('uploading')
         setLoading(true)
         setError(null)
         setIpCorrectionApplied(false)
         setIpAnalysis(null)
+        setUploadProgress(0)
+
+        // Log to AI Terminal
+        aiTerminal.clearTerminal()
+        aiTerminal.addLog('info', `📁 Arquivo selecionado: ${file.name} (${fileSizeMB.toFixed(2)} MB)`)
+        aiTerminal.startStreaming()
+
+        // Calculate estimated upload time based on file size
+        // Assume ~500KB/s upload speed for simulation
+        const estimatedUploadMs = Math.max((fileSizeKB / 500) * 1000, 2000) // Minimum 2 seconds
+        const uploadSteps = 80 // Upload goes to 80%
+        const stepInterval = estimatedUploadMs / uploadSteps
+
+        // Start simulated progress
+        let currentProgress = 0
+        const progressInterval = setInterval(() => {
+            currentProgress += 1
+            if (currentProgress <= uploadSteps) {
+                setUploadProgress(currentProgress)
+            }
+        }, stepInterval)
 
         try {
-            const result = await aiApi.uploadFile(acceptedFiles[0])
+            aiTerminal.addLog('status', `🔄 Enviando arquivo (${fileSizeMB.toFixed(2)} MB)...`)
+
+            // Perform actual upload (progress will be simulated above)
+            const result = await aiApi.uploadFile(file, (realProgress) => {
+                // If we get real progress, use it (scaled to 80%)
+                const scaledProgress = Math.round(realProgress * 0.8)
+                if (scaledProgress > currentProgress) {
+                    currentProgress = scaledProgress
+                    setUploadProgress(scaledProgress)
+                }
+            })
+
+            // Stop simulation and set to processing phase
+            clearInterval(progressInterval)
+            setUploadProgress(85)
+            setUploadPhase('processing')
+            aiTerminal.addLog('status', '⚙️ Processando arquivo no servidor...')
+
+            await new Promise(resolve => setTimeout(resolve, 500))
+            setUploadProgress(90)
+
+            setUploadPhase('analyzing')
+            aiTerminal.addLog('status', '🤖 IA analisando conteúdo...')
+
+            await new Promise(resolve => setTimeout(resolve, 300))
+            setUploadProgress(95)
+
             setUploadResult(result)
+            setUploadProgress(100)
+
+            aiTerminal.addLog('success', `✅ Arquivo processado: ${result.sheets.length} planilha(s) encontrada(s)`)
+
+            if (result.aiAvailable) {
+                aiTerminal.addLog('info', '🤖 IA disponível - análise inteligente ativada')
+            }
 
             // Initialize sheet configs
-            const configs = result.sheets.map(sheet => ({
-                sheetName: sheet.name,
-                enabled: sheet.isDeviceSheet,
-                category: sheet.aiSuggestion?.suggestedCategory || '',
-                columnMapping: sheet.aiSuggestion?.columnMapping || sheet.autoMapping,
-                expanded: false,
-            }))
+            const configs = result.sheets.map(sheet => {
+                if (sheet.aiSuggestion) {
+                    aiTerminal.addLog('info', `📊 Planilha "${sheet.name}": ${sheet.rowCount} linhas, categoria sugerida: ${sheet.aiSuggestion.suggestedCategory || 'auto-detectar'}`)
+                }
+                return {
+                    sheetName: sheet.name,
+                    enabled: sheet.isDeviceSheet,
+                    category: sheet.aiSuggestion?.suggestedCategory || '',
+                    columnMapping: sheet.aiSuggestion?.columnMapping || sheet.autoMapping,
+                    expanded: false,
+                }
+            })
             setSheetConfigs(configs)
 
             // Analyze for malformed IPs
             try {
+                aiTerminal.addLog('status', '🔍 Analisando endereços IP...')
                 const analysis = await aiApi.analyzeIPs(result.sessionId)
                 setIpAnalysis(analysis)
 
                 if (analysis.hasMalformed) {
+                    aiTerminal.addLog('warning', `⚠️ Encontrados ${analysis.malformedCount} IPs malformados - correção disponível`)
                     // Show IP correction dialog before continuing
                     setShowIPCorrection(true)
+                } else {
+                    aiTerminal.addLog('success', `✅ ${analysis.validCount} IPs válidos encontrados`)
                 }
             } catch (ipErr) {
+                aiTerminal.addLog('info', 'ℹ️ Análise de IPs ignorada, continuando...')
                 console.warn('IP analysis failed, continuing without correction:', ipErr)
             }
 
+            aiTerminal.stopStreaming()
+            aiTerminal.addLog('success', '✨ Análise inicial concluída! Configure as planilhas abaixo.')
             setActiveStep(1)
         } catch (err: any) {
+            clearInterval(progressInterval)
+            aiTerminal.stopStreaming()
+            aiTerminal.addLog('error', `❌ Erro: ${err.message || 'Erro ao fazer upload do arquivo'}`)
             setError(err.message || 'Erro ao fazer upload do arquivo')
         } finally {
             setLoading(false)
+            setUploadingFile(null)
         }
     }, [])
 
@@ -213,10 +298,17 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
         setLoading(true)
         setError(null)
 
+        // Log to AI Terminal
+        aiTerminal.addLog('info', '🔄 Iniciando análise com IA...')
+        aiTerminal.startStreaming()
+
         try {
+            const enabledSheets = sheetConfigs.filter(c => c.enabled)
+            aiTerminal.addLog('status', `📊 Processando ${enabledSheets.length} planilha(s)...`)
+
             const result = await aiApi.previewImport(
                 uploadResult!.sessionId,
-                sheetConfigs.filter(c => c.enabled).map(c => ({
+                enabledSheets.map(c => ({
                     sheetName: c.sheetName,
                     enabled: true,
                     category: c.category,
@@ -225,14 +317,33 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                 categories
             )
 
+            aiTerminal.addLog('success', `✅ ${result.totalDevices} dispositivo(s) encontrado(s)`)
+
+            if (result.aiCategorization) {
+                aiTerminal.addLog('info', '🤖 IA categorizou os dispositivos automaticamente')
+            }
+
+            if (result.validDevices > 0) {
+                aiTerminal.addLog('success', `✅ ${result.validDevices} válido(s) para importação`)
+            }
+
+            if (result.invalidDevices > 0) {
+                aiTerminal.addLog('warning', `⚠️ ${result.invalidDevices} dispositivo(s) com erros`)
+            }
+
             setPreviewDevices(result.devices)
             setPreviewStats({
                 total: result.totalDevices,
                 valid: result.validDevices,
                 invalid: result.invalidDevices,
             })
+
+            aiTerminal.stopStreaming()
+            aiTerminal.addLog('success', '✨ Análise concluída! Revise e confirme a importação.')
             setActiveStep(2)
         } catch (err: any) {
+            aiTerminal.stopStreaming()
+            aiTerminal.addLog('error', `❌ Erro: ${err.message || 'Erro ao processar preview'}`)
             setError(err.message || 'Erro ao processar preview')
         } finally {
             setLoading(false)
@@ -243,21 +354,33 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
         setLoading(true)
         setError(null)
 
+        // Log to AI Terminal
+        aiTerminal.addLog('info', '🚀 Iniciando processo de importação...')
+        aiTerminal.startStreaming()
+
         try {
             const validDevices = previewDevices.filter(d => d._validation.valid)
+            aiTerminal.addLog('status', `📦 Verificando ${validDevices.length} dispositivo(s)...`)
 
             // Check for duplicates first
+            aiTerminal.addLog('status', '🔍 Verificando duplicatas no banco de dados...')
             const duplicateCheck = await aiApi.checkDuplicates(validDevices)
+
             if (duplicateCheck.duplicates > 0) {
+                aiTerminal.addLog('warning', `⚠️ ${duplicateCheck.duplicates} duplicata(s) encontrada(s)`)
+                aiTerminal.stopStreaming()
                 setDuplicateInfo(duplicateCheck)
                 setShowDuplicateDialog(true)
                 setLoading(false)
                 return // Wait for user decision
             }
 
+            aiTerminal.addLog('success', '✅ Nenhuma duplicata encontrada')
             // No duplicates, proceed with import
             await executeImport(validDevices)
         } catch (err: any) {
+            aiTerminal.stopStreaming()
+            aiTerminal.addLog('error', `❌ Erro: ${err.message || 'Erro ao importar dispositivos'}`)
             setError(err.message || 'Erro ao importar dispositivos')
             setLoading(false)
         }
@@ -265,11 +388,14 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
 
     const executeImport = async (devicesToImport: DevicePreview[]) => {
         setLoading(true)
+        aiTerminal.addLog('info', `📦 Importando ${devicesToImport.length} dispositivo(s)...`)
 
         try {
             const BATCH_SIZE = 50
             const totalDevices = devicesToImport.length
             const totalBatches = Math.ceil(totalDevices / BATCH_SIZE)
+
+            aiTerminal.addLog('status', `📊 Dividido em ${totalBatches} lote(s) de até ${BATCH_SIZE} dispositivos`)
 
             // Initialize progress
             setImportProgress({
@@ -293,6 +419,8 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                 const batchEnd = Math.min(batchStart + BATCH_SIZE, totalDevices)
                 const batch = devicesToImport.slice(batchStart, batchEnd)
 
+                aiTerminal.addLog('status', `🔄 Processando lote ${i + 1}/${totalBatches} (${batch.length} dispositivos)...`)
+
                 // Update progress before processing batch
                 setImportProgress(prev => ({
                     ...prev,
@@ -301,15 +429,44 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                     percentage: Math.round((batchStart / totalDevices) * 100)
                 }))
 
+                // Sanitize batch for DB constraints (client-side fix for check constraint)
+                const sanitizedBatch = batch.map(device => {
+                    let type = (device._suggestedCategory || 'converter').toLowerCase();
+
+                    // Fix common plurals/variations
+                    if (type === 'cameras') type = 'camera';
+                    if (type === 'switches') type = 'switch';
+                    if (type === 'routers') type = 'router';
+                    if (type === 'access points' || type === 'access_points' || type === 'ap_wifi') type = 'access_point';
+                    if (type === 'nvrs' || type === 'dvr') type = 'nvr';
+                    if (type === 'server') type = 'controller'; // Map server to controller
+                    if (type === 'sensor') type = 'converter';
+                    if (type === 'other') type = 'converter'; // Use converter for generic
+
+                    // Strict validation against DB allowed types
+                    const allowed = ['camera', 'nvr', 'switch', 'router', 'firewall', 'access_point', 'reader', 'controller', 'converter'];
+                    if (!allowed.includes(type)) {
+                        type = 'converter';
+                    }
+
+                    return {
+                        ...device,
+                        _suggestedCategory: type
+                    };
+                });
+
                 try {
-                    const result = await aiApi.confirmImport(uploadResult!.sessionId, batch)
+                    const result = await aiApi.confirmImport(uploadResult!.sessionId, sanitizedBatch)
                     aggregatedResults.success += result.results.success
                     aggregatedResults.failed += result.results.failed
                     aggregatedResults.errors.push(...result.results.errors)
+
+                    aiTerminal.addLog('success', `✅ Lote ${i + 1}: ${result.results.success} importado(s), ${result.results.failed} falha(s)`)
                 } catch (batchError: any) {
                     // If a batch fails, count all devices in batch as failed
                     aggregatedResults.failed += batch.length
                     aggregatedResults.errors.push(`Lote ${i + 1}: ${batchError.message}`)
+                    aiTerminal.addLog('error', `❌ Lote ${i + 1} falhou: ${batchError.message}`)
                 }
 
                 // Update progress after batch
@@ -325,9 +482,14 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                 }
             }
 
+            aiTerminal.stopStreaming()
+            aiTerminal.addLog('success', `🎉 Importação finalizada! ${aggregatedResults.success} sucesso, ${aggregatedResults.failed} falha(s)`)
+
             setImportResults(aggregatedResults)
             setActiveStep(3)
         } catch (err: any) {
+            aiTerminal.stopStreaming()
+            aiTerminal.addLog('error', `❌ Erro fatal: ${err.message || 'Erro ao importar dispositivos'}`)
             setError(err.message || 'Erro ao importar dispositivos')
         } finally {
             setLoading(false)
@@ -490,6 +652,11 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                                 background: isDragActive
                                     ? alpha(theme.palette.primary.main, 0.05)
                                     : 'transparent',
+                                minHeight: 300,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'center',
                                 '&:hover': {
                                     borderColor: theme.palette.primary.main,
                                     background: alpha(theme.palette.primary.main, 0.02),
@@ -497,8 +664,133 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                             }}
                         >
                             <input {...getInputProps()} />
+
                             {loading ? (
-                                <CircularProgress />
+                                <Box sx={{ width: '100%', maxWidth: 480, textAlign: 'center' }}>
+                                    {/* Animated upload icon */}
+                                    <Box
+                                        sx={{
+                                            width: 80,
+                                            height: 80,
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            mx: 'auto',
+                                            mb: 3,
+                                            background: uploadPhase === 'uploading'
+                                                ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`
+                                                : uploadPhase === 'processing'
+                                                    ? `linear-gradient(135deg, ${theme.palette.warning.main} 0%, ${theme.palette.primary.main} 100%)`
+                                                    : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.success.main} 100%)`,
+                                            boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                            animation: 'pulse 2s ease-in-out infinite',
+                                            '@keyframes pulse': {
+                                                '0%, 100%': { transform: 'scale(1)', opacity: 1 },
+                                                '50%': { transform: 'scale(1.05)', opacity: 0.9 },
+                                            }
+                                        }}
+                                    >
+                                        {uploadPhase === 'uploading' && <CloudUpload sx={{ fontSize: 40, color: 'white' }} />}
+                                        {uploadPhase === 'processing' && <FilePresent sx={{ fontSize: 40, color: 'white' }} />}
+                                        {uploadPhase === 'analyzing' && <Psychology sx={{ fontSize: 40, color: 'white', animation: 'spin 2s linear infinite', '@keyframes spin': { '100%': { transform: 'rotate(360deg)' } } }} />}
+                                    </Box>
+
+                                    {/* File info */}
+                                    {uploadingFile && (
+                                        <Box sx={{ mb: 2, p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                                            <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 400, mx: 'auto' }}>
+                                                📄 {uploadingFile.name}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {(uploadingFile.size / 1024 / 1024).toFixed(2)} MB
+                                            </Typography>
+                                        </Box>
+                                    )}
+
+                                    {/* Phase title */}
+                                    <Typography variant="h5" fontWeight={600} gutterBottom>
+                                        {uploadPhase === 'uploading' && 'Enviando arquivo'}
+                                        {uploadPhase === 'processing' && 'Processando dados'}
+                                        {uploadPhase === 'analyzing' && 'IA analisando'}
+                                    </Typography>
+
+                                    {/* Big percentage */}
+                                    <Typography variant="h2" fontWeight={700} color="primary" sx={{ mb: 2 }}>
+                                        {uploadProgress}%
+                                    </Typography>
+
+                                    {/* Progress bar with gradient */}
+                                    <Box sx={{ position: 'relative', mb: 2 }}>
+                                        <LinearProgress
+                                            variant="determinate"
+                                            value={uploadProgress}
+                                            sx={{
+                                                height: 14,
+                                                borderRadius: 7,
+                                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                                '& .MuiLinearProgress-bar': {
+                                                    borderRadius: 7,
+                                                    background: uploadPhase === 'uploading'
+                                                        ? `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`
+                                                        : uploadPhase === 'processing'
+                                                            ? `linear-gradient(90deg, ${theme.palette.warning.main} 0%, ${theme.palette.primary.main} 100%)`
+                                                            : `linear-gradient(90deg, ${theme.palette.secondary.main} 0%, ${theme.palette.success.main} 100%)`,
+                                                    transition: 'transform 0.2s ease',
+                                                }
+                                            }}
+                                        />
+                                        {/* Animated shimmer effect */}
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                borderRadius: 7,
+                                                overflow: 'hidden',
+                                                pointerEvents: 'none',
+                                                '&::after': {
+                                                    content: '""',
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: '-100%',
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                                                    animation: 'shimmer 1.5s infinite',
+                                                },
+                                                '@keyframes shimmer': {
+                                                    '0%': { left: '-100%' },
+                                                    '100%': { left: '100%' },
+                                                }
+                                            }}
+                                        />
+                                    </Box>
+
+                                    {/* Phase steps */}
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 3 }}>
+                                        <Box sx={{ textAlign: 'center', opacity: uploadPhase === 'uploading' ? 1 : 0.5 }}>
+                                            <CloudUpload sx={{ color: uploadPhase === 'uploading' ? 'primary.main' : 'text.disabled' }} />
+                                            <Typography variant="caption" display="block" fontWeight={uploadPhase === 'uploading' ? 600 : 400}>
+                                                Upload
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: 'center', opacity: uploadPhase === 'processing' ? 1 : 0.5 }}>
+                                            <FilePresent sx={{ color: uploadPhase === 'processing' ? 'warning.main' : 'text.disabled' }} />
+                                            <Typography variant="caption" display="block" fontWeight={uploadPhase === 'processing' ? 600 : 400}>
+                                                Processar
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: 'center', opacity: uploadPhase === 'analyzing' ? 1 : 0.5 }}>
+                                            <Psychology sx={{ color: uploadPhase === 'analyzing' ? 'secondary.main' : 'text.disabled' }} />
+                                            <Typography variant="caption" display="block" fontWeight={uploadPhase === 'analyzing' ? 600 : 400}>
+                                                Análise IA
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
                             ) : (
                                 <>
                                     <CloudUpload sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -829,21 +1121,20 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                                     Lote {importProgress.currentBatch} de {importProgress.totalBatches}
                                 </Typography>
                             </Box>
-                        ) : (
-                            // Simple progress for other steps
+                        ) : activeStep > 0 && (
+                            // Simple progress for other steps (not upload)
                             <>
                                 <LinearProgress />
                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
-                                    {activeStep === 0 ? 'Carregando arquivo...' :
-                                        activeStep === 1 ? 'Analisando planilhas com IA...' : 'Processando...'}
+                                    {activeStep === 1 ? 'Analisando planilhas com IA...' : 'Processando...'}
                                 </Typography>
                             </>
                         )}
                     </Box>
                 )}
 
-                {/* AI Terminal - Toggle Button and Component */}
-                {aiAvailable && activeStep >= 1 && activeStep < 3 && (
+                {/* AI Terminal - Toggle Button and Component - Show from step 0 if AI is available or checking */}
+                {(aiAvailable === true || aiAvailable === null) && activeStep < 3 && (
                     <Box sx={{ mt: 2 }}>
                         <Button
                             size="small"
@@ -856,7 +1147,7 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                         >
                             {showAITerminal ? 'Ocultar Terminal IA' : 'Mostrar Terminal IA'}
                         </Button>
-                        <AITerminal visible={showAITerminal} />
+                        <AITerminal visible={showAITerminal} defaultExpanded={true} />
                     </Box>
                 )}
             </DialogContent>
@@ -918,25 +1209,29 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
             </DialogActions>
 
             {/* IP Correction Dialog */}
-            {uploadResult && (
-                <IPCorrectionDialog
-                    open={showIPCorrection}
-                    onClose={handleIPCorrectionClose}
-                    onApply={handleIPCorrectionApply}
-                    sessionId={uploadResult.sessionId}
-                    analysisResult={ipAnalysis}
-                />
-            )}
+            {
+                uploadResult && (
+                    <IPCorrectionDialog
+                        open={showIPCorrection}
+                        onClose={handleIPCorrectionClose}
+                        onApply={handleIPCorrectionApply}
+                        sessionId={uploadResult.sessionId}
+                        analysisResult={ipAnalysis}
+                    />
+                )
+            }
 
             {/* Duplicate Review Dialog */}
-            {duplicateInfo && (
-                <DuplicateReviewDialog
-                    open={showDuplicateDialog}
-                    duplicates={duplicateInfo.duplicateDetails}
-                    onConfirm={handleDuplicateDecisions}
-                    onClose={() => setShowDuplicateDialog(false)}
-                />
-            )}
-        </Dialog>
+            {
+                duplicateInfo && (
+                    <DuplicateReviewDialog
+                        open={showDuplicateDialog}
+                        duplicates={duplicateInfo.duplicateDetails}
+                        onConfirm={handleDuplicateDecisions}
+                        onClose={() => setShowDuplicateDialog(false)}
+                    />
+                )
+            }
+        </Dialog >
     )
 }

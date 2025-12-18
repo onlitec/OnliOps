@@ -170,41 +170,29 @@ class AIService {
     }
 
     /**
-     * Analyze devices and categorize them
+     * Analyze devices and categorize them using saved prompt
      * @param {Array} devices - Array of device objects with model, manufacturer, description fields
      * @param {Array} categories - Available categories from database
      */
     async categorizeDevices(devices, categories) {
         const categoryList = categories.map(c => `- ${c.slug}: ${c.name}`).join('\n');
 
-        const prompt = `You are a network infrastructure expert. Analyze the following devices and categorize each one.
+        // Load the saved prompt from file
+        const prompt = this.promptLoader.getPrompt('categorize_devices', {
+            categories: categoryList,
+            devices: devices.slice(0, 50)
+        });
 
-Available categories:
-${categoryList}
+        if (!prompt) {
+            console.error('Failed to load categorize_devices prompt, using fallback');
+            // Fallback to basic prompt if file not found
+            return this._categorizeDevicesFallback(devices, categories);
+        }
 
-Devices to categorize (JSON array):
-${JSON.stringify(devices.slice(0, 50), null, 2)}
-
-Instructions:
-1. For each device, determine the most appropriate category based on:
-   - Model name (e.g., "DS-2CD" suggests Hikvision camera)
-   - Manufacturer (e.g., "Cisco" suggests network equipment)
-   - Description or hostname
-2. Return ONLY a valid JSON array with objects containing:
-   - original_index: the index of the device in the input array
-   - suggested_category: the category slug
-   - confidence: "high", "medium", or "low"
-   - reason: brief explanation
-
-Example output format:
-[
-  {"original_index": 0, "suggested_category": "cameras", "confidence": "high", "reason": "Hikvision DS-2CD is an IP camera model"},
-  {"original_index": 1, "suggested_category": "switches", "confidence": "medium", "reason": "Cisco model suggests network switch"}
-]
-
-Return ONLY the JSON array, no additional text.`;
-
-        const result = await this.chat(prompt, { temperature: 0.1 });
+        const result = await this.chat(prompt.content, {
+            temperature: prompt.temperature,
+            maxTokens: prompt.maxTokens
+        });
 
         if (!result.success) {
             return { success: false, error: result.error };
@@ -218,6 +206,12 @@ Return ONLY the JSON array, no additional text.`;
             const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
             if (jsonMatch) {
                 jsonStr = jsonMatch[1].trim();
+            }
+
+            // Try to find JSON array
+            const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
+            if (arrayMatch) {
+                jsonStr = arrayMatch[0];
             }
 
             const categorizations = JSON.parse(jsonStr);
@@ -238,73 +232,53 @@ Return ONLY the JSON array, no additional text.`;
     }
 
     /**
- * Analyze a spreadsheet and identify device sheets
- * @param {Object} workbookInfo - Information about sheets in the workbook
- */
-    async analyzeSpreadsheet(workbookInfo) {
-        const prompt = `You are an intelligent assistant analyzing an Excel/CSV spreadsheet for a network inventory and security system. Your goal is to identify sheets that contain network device data (like cameras, NVRs, switches, routers, access points, etc).
+     * Fallback categorization if prompt file not available
+     */
+    async _categorizeDevicesFallback(devices, categories) {
+        const categoryList = categories.map(c => `- ${c.slug}: ${c.name}`).join('\n');
+        const fallbackPrompt = `Categorize these devices:\n\nCategories:\n${categoryList}\n\nDevices:\n${JSON.stringify(devices.slice(0, 50))}\n\nReturn JSON array with: original_index, suggested_category, confidence, reason`;
 
-## SPREADSHEET INFORMATION
+        const result = await this.chat(fallbackPrompt, { temperature: 0.1 });
+        if (!result.success) return { success: false, error: result.error };
 
-**Sheets in workbook:**
-${workbookInfo.sheets.map(s => `- "${s.name}": ${s.rowCount} rows`).join('\n')}
-
-**Column headers by sheet:**
-${Object.entries(workbookInfo.sampleColumns).map(([sheet, cols]) =>
-            `"${sheet}": [${cols.map(c => `"${c}"`).join(', ')}]`
-        ).join('\n')}
-
-**Sample data from each sheet:**
-${JSON.stringify(workbookInfo.sheets.map(s => ({ name: s.name, sample: s.sampleData?.slice(0, 2) })), null, 2)}
-
-## YOUR TASK
-
-1. **Identify device sheets**: Look for columns that contain IP addresses, serial numbers, MAC addresses, model names, or device-related terms
-2. **Determine device category**: Based on sheet name and sample data, suggest what type of devices are in each sheet (camera, nvr, switch, router, access_point, server, firewall, reader, controller, other)
-3. **Map columns intelligently**: Match spreadsheet columns to these standard fields:
-   - ip_address: IPv4 address (e.g., 192.168.1.1)
-   - serial_number: Device serial (e.g., DS-2CD2085FWD-I20190501)
-   - tag: Device label/identifier (e.g., CAM-01, RACK-02)
-   - model: Device model name (e.g., DS-2CD2085FWD-I)
-   - manufacturer: Brand name (e.g., Hikvision, Dahua, Intelbras)
-   - hostname: Device name (e.g., Camera-Lobby)
-   - mac_address: MAC address (e.g., 00:11:22:33:44:55)
-   - location: Physical location (e.g., Building A, Floor 2)
-
-## COLUMN DETECTION TIPS
-
-- Common IP column names: "IP", "IP Address", "IPv4 Address", "Endereço IP", "IPv4"
-- Common Serial column names: "Serial", "Serial Number", "Device Serial Number", "S/N", "Nº Série"
-- Common Model column names: "Model", "Modelo", "Device Type", "Tipo", "Product"
-- Common MAC column names: "MAC", "MAC Address", "Endereço MAC", "Physical Address"
-- SADP Hikvision format uses: "IPv4 Address", "Device Serial Number", "Device Type", "MAC Address"
-
-## RESPONSE FORMAT
-
-Return ONLY a JSON object (no markdown, no explanation):
-{
-  "sheets": [
-    {
-      "name": "Sheet name exactly as shown",
-      "isDeviceSheet": true,
-      "suggestedCategory": "camera|nvr|switch|router|access_point|server|firewall|reader|controller|other",
-      "confidence": "high|medium|low",
-      "columnMapping": {
-        "ip_address": "exact column name or null",
-        "serial_number": "exact column name or null",
-        "tag": "exact column name or null",
-        "model": "exact column name or null",
-        "manufacturer": "exact column name or null",
-        "hostname": "exact column name or null",
-        "mac_address": "exact column name or null",
-        "location": "exact column name or null"
-      },
-      "estimatedDeviceCount": number
+        try {
+            let jsonStr = result.response.trim();
+            const match = jsonStr.match(/\[[\s\S]*\]/);
+            if (match) jsonStr = match[0];
+            return { success: true, categorizations: JSON.parse(jsonStr), model: result.model };
+        } catch (e) {
+            return { success: false, error: 'Failed to parse response' };
+        }
     }
-  ]
-}`;
 
-        const result = await this.chat(prompt, { temperature: 0.1 });
+    /**
+     * Analyze a spreadsheet and identify device sheets using saved prompt
+     * @param {Object} workbookInfo - Information about sheets in the workbook
+     */
+    async analyzeSpreadsheet(workbookInfo) {
+        // Prepare data for prompt template
+        const sheetsInfo = workbookInfo.sheets.map(s => `- "${s.name}": ${s.rowCount} rows`).join('\n');
+        const headersInfo = Object.entries(workbookInfo.sampleColumns).map(([sheet, cols]) =>
+            `"${sheet}": [${cols.map(c => `"${c}"`).join(', ')}]`
+        ).join('\n');
+        const sampleData = workbookInfo.sheets.map(s => ({ name: s.name, sample: s.sampleData?.slice(0, 2) }));
+
+        // Load the saved prompt from file
+        const prompt = this.promptLoader.getPrompt('analyze_spreadsheet', {
+            sheets: sheetsInfo,
+            headers: headersInfo,
+            sample_data: JSON.stringify(sampleData, null, 2)
+        });
+
+        if (!prompt) {
+            console.error('Failed to load analyze_spreadsheet prompt, using fallback');
+            return this._analyzeSpreadsheetFallback(workbookInfo);
+        }
+
+        const result = await this.chat(prompt.content, {
+            temperature: prompt.temperature,
+            maxTokens: prompt.maxTokens
+        });
 
         if (!result.success) {
             return { success: false, error: result.error };
@@ -337,6 +311,25 @@ Return ONLY a JSON object (no markdown, no explanation):
                 error: 'Failed to parse AI response',
                 rawResponse: result.response
             };
+        }
+    }
+
+    /**
+     * Fallback spreadsheet analysis if prompt file not available
+     */
+    async _analyzeSpreadsheetFallback(workbookInfo) {
+        const fallbackPrompt = `Analyze this spreadsheet and identify device sheets:\n\nSheets: ${JSON.stringify(workbookInfo.sheets.map(s => s.name))}\nColumns: ${JSON.stringify(workbookInfo.sampleColumns)}\n\nReturn JSON with sheets array containing: name, isDeviceSheet, suggestedCategory, columnMapping`;
+
+        const result = await this.chat(fallbackPrompt, { temperature: 0.1 });
+        if (!result.success) return { success: false, error: result.error };
+
+        try {
+            let jsonStr = result.response.trim();
+            const match = jsonStr.match(/\{[\s\S]*\}/);
+            if (match) jsonStr = match[0];
+            return { success: true, analysis: JSON.parse(jsonStr), model: result.model };
+        } catch (e) {
+            return { success: false, error: 'Failed to parse response' };
         }
     }
 

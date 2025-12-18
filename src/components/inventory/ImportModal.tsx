@@ -56,15 +56,15 @@ const ImportModal: React.FC<ImportModalProps> = ({ onClose, onSuccess }) => {
             return 'nvr'
         }
 
-        // Hikvision DVR (DS-7x04, DS-7x08, DS-7x16...)
+        // Hikvision DVR
         if (modelLower.includes('dvr') || modelLower.match(/ds-7[1234]\d{2}/i)) {
-            return 'dvr'
+            return 'nvr' // Mapping DVR to NVR category
         }
 
         // Network equipment
         if (modelLower.includes('switch')) return 'switch'
         if (modelLower.includes('router')) return 'router'
-        if (modelLower.includes('ap') || modelLower.includes('wifi')) return 'ap_wifi'
+        if (modelLower.includes('ap') || modelLower.includes('wifi')) return 'access_point'
 
         // Termo cameras (DS-2TD...)
         if (modelLower.includes('ds-2td')) return 'camera'
@@ -73,7 +73,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ onClose, onSuccess }) => {
         if (modelLower.includes('camera') || modelLower.includes('cam')) return 'camera'
         if (modelLower.includes('controller')) return 'controller'
 
-        return 'other'
+        return 'converter' // Default fallback to satisfy DB constraint (allowed: camera, nvr, switch, router, firewall, access_point, reader, controller, converter)
     }
 
     const mapSADPToDevice = (row: any): ParsedDevice => {
@@ -210,13 +210,33 @@ const ImportModal: React.FC<ImportModalProps> = ({ onClose, onSuccess }) => {
             // Filtrar apenas dispositivos válidos
             const validDevicesToImport = parsedData.filter(d => !d.errors || d.errors.length === 0)
 
+            // Sanitize device_types for DB constraints (client-side fix)
+            const sanitizedDevices = validDevicesToImport.map(d => {
+                let type = (d.device_type || 'converter').toLowerCase();
+
+                // Mappings
+                if (type === 'cameras') type = 'camera';
+                if (type === 'switches') type = 'switch';
+                if (type === 'routers') type = 'router';
+                if (type === 'access points' || type === 'access_points' || type === 'ap_wifi') type = 'access_point';
+                if (type === 'nvrs' || type === 'dvr') type = 'nvr';
+                if (type === 'server') type = 'controller';
+                if (type === 'sensor') type = 'converter';
+                if (type === 'other') type = 'converter';
+
+                const allowed = ['camera', 'nvr', 'switch', 'router', 'firewall', 'access_point', 'reader', 'controller', 'converter'];
+                if (!allowed.includes(type)) type = 'converter';
+
+                return { ...d, device_type: type };
+            });
+
             // Chamar API backend para importar
             const response = await fetch('/api/devices/import', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ devices: validDevicesToImport })
+                body: JSON.stringify({ devices: sanitizedDevices })
             })
 
             if (!response.ok) {

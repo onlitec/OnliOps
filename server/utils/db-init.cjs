@@ -327,6 +327,11 @@ async function runMigrations(pool) {
         {
             name: 'add_category_id_to_network_devices',
             sql: `ALTER TABLE network_devices ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES device_categories(id) ON DELETE SET NULL;`
+        },
+        // Allow NULL in vlan_id column (for devices without VLAN assignment)
+        {
+            name: 'allow_null_vlan_id',
+            sql: `ALTER TABLE network_devices ALTER COLUMN vlan_id DROP NOT NULL;`
         }
     ];
 

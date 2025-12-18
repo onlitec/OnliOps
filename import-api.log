@@ -1,0 +1,11 @@
+nohup: ignoring input
+[Branding] Directory exists: /opt/calabasas/server/uploads/branding
+[Branding] Files found: none
+[DB] Checking database schema...
+Import API server running on http://localhost:3001
+AI endpoints available at http://localhost:3001/api/ai
+AI Streaming available at http://localhost:3001/api/ai/stream
+Prompts API available at http://localhost:3001/api/prompts
+[DB] Tables already exist. Ensuring all tables are up to date...
+[DB] Error initializing database: must be owner of table users
+[DB] Database initialization failed - some features may not work

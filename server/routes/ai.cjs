@@ -397,7 +397,8 @@ router.post('/preview-import', async (req, res) => {
                         model: d.model,
                         manufacturer: d.manufacturer,
                         hostname: d.hostname,
-                        description: d.description
+                        description: d.description,
+                        serial_number: d.serial_number // Pass serial for manufacturer identification
                     })),
                     categories
                 );
@@ -405,13 +406,19 @@ router.post('/preview-import', async (req, res) => {
                 if (catResult.success) {
                     aiCategorization = catResult.categorizations;
 
-                    // Apply categorizations
+                    // Apply categorizations AND manufacturer from AI
                     aiCategorization.forEach(cat => {
                         const device = devicesNeedingCategorization[cat.original_index];
                         if (device) {
                             device._suggestedCategory = cat.suggested_category;
                             device._categoryConfidence = cat.confidence;
                             device._categoryReason = cat.reason;
+
+                            // Apply manufacturer from AI if identified and device doesn't have one
+                            if (cat.manufacturer && (!device.manufacturer || device.manufacturer.trim() === '')) {
+                                device.manufacturer = cat.manufacturer;
+                                device._manufacturerFromAI = true;
+                            }
                         }
                     });
                 }
@@ -492,38 +499,67 @@ router.post('/confirm-import', async (req, res) => {
 
             try {
                 // Resolve category slug to UUID
-                const categorySlug = device._suggestedCategory || 'other';
-                const categoryId = categoryMap[categorySlug] || categoryMap['other'] || null;
+                let categorySlug = (device._suggestedCategory || device.device_type || 'converter').toLowerCase();
+
+                // Mappings for common term variations
+                const typeMappings = {
+                    'cameras': 'camera',
+                    'switches': 'switch',
+                    'routers': 'router',
+                    'access points': 'access_point',
+                    'access_points': 'access_point',
+                    'ap_wifi': 'access_point',
+                    'nvrs': 'nvr',
+                    'dvr': 'nvr',
+                    'server': 'controller',
+                    'sensor': 'converter',
+                    'other': 'converter'
+                };
+
+                if (typeMappings[categorySlug]) {
+                    categorySlug = typeMappings[categorySlug];
+                }
+
+                // Strict validation against DB allowed types (if check constraint exists)
+                // We trust the query to fail if it's really wrong, but let's try to be safe
+                const allowedTypes = ['camera', 'nvr', 'switch', 'router', 'firewall', 'access_point', 'reader', 'controller', 'converter'];
+                if (!allowedTypes.includes(categorySlug)) {
+                    // Try to remove trailing 's' as last resort
+                    if (allowedTypes.includes(categorySlug.replace(/s$/, ''))) {
+                        categorySlug = categorySlug.replace(/s$/, '');
+                    } else {
+                        console.warn(`Invalid category slug '${categorySlug}' for device ${device.serial_number}, falling back to 'converter'`);
+                        categorySlug = 'converter';
+                    }
+                }
 
                 await dbPool.query(`
                     INSERT INTO network_devices (
-                        serial_number, ip_address, mac_address, model, manufacturer, tag,
-                        device_type, category_id, hostname, status, vlan_id, location, notes, project_id
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                        serial_number, ip_address, mac_address, model, manufacturer,
+                        device_type, firmware_version, hostname, status, vlan_id, notes, project_id
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                     ON CONFLICT (ip_address, project_id) DO UPDATE SET
                         serial_number = EXCLUDED.serial_number,
                         mac_address = EXCLUDED.mac_address,
                         model = EXCLUDED.model,
                         manufacturer = EXCLUDED.manufacturer,
-                        tag = EXCLUDED.tag,
                         device_type = EXCLUDED.device_type,
-                        category_id = EXCLUDED.category_id,
+                        firmware_version = EXCLUDED.firmware_version,
                         hostname = EXCLUDED.hostname,
+                        status = EXCLUDED.status,
                         notes = EXCLUDED.notes,
                         updated_at = NOW()
                 `, [
-                    device.serial_number || null,
+                    device.serial_number,
                     device.ip_address,
                     device.mac_address || null,
-                    device.model || 'Desconhecido',
-                    device.manufacturer || 'Desconhecido',
-                    device.tag || null,
+                    device.model,
+                    device.manufacturer,
                     categorySlug,
-                    categoryId,
+                    device.firmware_version || null,
                     device.hostname || null,
-                    'active',
+                    device.status || 'active',
                     defaultVlanId,
-                    device.location || null,
                     `Importado via IA em ${new Date().toLocaleString('pt-BR')}. ${device._categoryReason || ''}`,
                     req.projectId
                 ]);

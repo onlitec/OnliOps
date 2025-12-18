@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') })
+
 const express = require('express')
 const { Pool } = require('pg')
 const cors = require('cors')
@@ -723,6 +726,37 @@ app.post('/api/devices/import', async (req, res) => {
 
     for (const device of devices) {
         try {
+            // Allowed device types to satisfy DB Check Constraint
+            const ALLOWED_DEVICE_TYPES = [
+                'camera', 'nvr', 'switch', 'router', 'firewall',
+                'access_point', 'reader', 'controller', 'converter'
+            ];
+
+            // Map device_type
+            let deviceType = (device.device_type || 'converter').toLowerCase();
+
+            // Simple mapping for common variations
+            if (deviceType === 'cameras') deviceType = 'camera';
+            else if (deviceType === 'switches') deviceType = 'switch';
+            else if (deviceType === 'routers') deviceType = 'router';
+            else if (deviceType === 'dvr') deviceType = 'nvr';
+            else if (deviceType === 'nvrs') deviceType = 'nvr';
+            else if (deviceType === 'ap_wifi' || deviceType === 'access points') deviceType = 'access_point';
+            else if (deviceType === 'server') deviceType = 'controller';
+            else if (deviceType === 'sensor') deviceType = 'converter';
+            else if (deviceType === 'other') deviceType = 'converter';
+
+            // Final validation - fallback to converter if still invalid
+            if (!ALLOWED_DEVICE_TYPES.includes(deviceType)) {
+                // Try removing last 's' as simple plural fix
+                if (ALLOWED_DEVICE_TYPES.includes(deviceType.slice(0, -1))) {
+                    deviceType = deviceType.slice(0, -1);
+                } else {
+                    console.warn(`Invalid device_type '${deviceType}' for ${device.serial_number}, falling back to converter`);
+                    deviceType = 'converter';
+                }
+            }
+
             await pool.query(`
                 INSERT INTO network_devices (
                     serial_number, ip_address, mac_address, model, manufacturer,
@@ -745,7 +779,7 @@ app.post('/api/devices/import', async (req, res) => {
                 device.mac_address || null,
                 device.model,
                 device.manufacturer,
-                device.device_type,
+                deviceType,
                 device.firmware_version || null,
                 device.hostname || null,
                 device.status || 'active',

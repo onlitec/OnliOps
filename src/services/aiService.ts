@@ -1,6 +1,7 @@
 /**
  * AI Service - Frontend API client for AI features
  */
+import axios from 'axios';
 
 const API_BASE = '/api/ai';
 
@@ -168,29 +169,64 @@ class AIApiService {
     }
 
     /**
-     * Upload file for AI analysis
+     * Upload file for AI analysis with progress tracking
      */
-    async uploadFile(file: File): Promise<UploadResult> {
+    async uploadFile(file: File, onProgress?: (progress: number) => void): Promise<UploadResult> {
         const formData = new FormData();
         formData.append('file', file);
 
-        const headers: HeadersInit = {};
+        // Don't set Content-Type manually - axios will set it automatically with boundary
+        const headers: Record<string, string> = {};
+        
         if (this.projectId) {
             headers['X-Project-ID'] = this.projectId;
         }
 
-        const response = await fetch(`${API_BASE}/upload`, {
-            method: 'POST',
-            headers,
-            body: formData,
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Upload failed');
+        // Start with 5% to show immediate feedback
+        if (onProgress) {
+            onProgress(5);
         }
 
-        return response.json();
+        try {
+            let lastProgress = 5;
+            
+            const response = await axios.post(`${API_BASE}/upload`, formData, {
+                headers,
+                onUploadProgress: (progressEvent) => {
+                    if (onProgress) {
+                        if (progressEvent.total) {
+                            // Calculate real progress, but reserve last 10% for processing
+                            const uploadPercent = Math.round((progressEvent.loaded * 90) / progressEvent.total);
+                            const progress = Math.max(uploadPercent, lastProgress);
+                            lastProgress = progress;
+                            onProgress(Math.min(progress, 90));
+                        } else {
+                            // If total is unknown, simulate progress
+                            const simulatedProgress = Math.min(lastProgress + 10, 80);
+                            lastProgress = simulatedProgress;
+                            onProgress(simulatedProgress);
+                        }
+                    }
+                }
+            });
+            
+            // Upload complete, now processing (90-100%)
+            if (onProgress) {
+                onProgress(95);
+            }
+            
+            // Brief delay to show processing state
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            if (onProgress) {
+                onProgress(100);
+            }
+            
+            return response.data;
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            throw new Error(error.response?.data?.error || error.message || 'Upload failed');
+        }
     }
 
     /**
