@@ -11,6 +11,73 @@ const excelProcessor = require('../utils/excelProcessor.cjs');
 
 const router = express.Router();
 
+/**
+ * Detect manufacturer from model name or serial number
+ * @param {string} model - Device model
+ * @param {string} serialNumber - Device serial number
+ * @returns {string} Detected manufacturer or 'Unknown'
+ */
+function detectManufacturer(model, serialNumber) {
+    const modelLower = (model || '').toLowerCase();
+    const serialLower = (serialNumber || '').toLowerCase();
+
+    // Hikvision patterns
+    if (modelLower.startsWith('ds-') ||
+        modelLower.includes('hikvision') ||
+        serialLower.match(/^ds-/i) ||
+        modelLower.match(/^(ds-2cd|ds-2td|ds-7|ds-96|ds-k|ipc-hfw)/i)) {
+        return 'Hikvision';
+    }
+
+    // Dahua patterns  
+    if (modelLower.includes('dahua') ||
+        modelLower.startsWith('dh-') ||
+        modelLower.match(/^(ipc-hdw|nvr|xvr|dhi-)/i)) {
+        return 'Dahua';
+    }
+
+    // Intelbras patterns
+    if (modelLower.includes('intelbras') ||
+        modelLower.match(/^(vip-|vhd-|vhl-|mhdx|nvd|nvr|imhdx)/i)) {
+        return 'Intelbras';
+    }
+
+    // HiLook (Hikvision sub-brand)
+    if (modelLower.includes('hilook') || modelLower.match(/^(ipc-b|ipc-t|nvr-1|dvr-2)/i)) {
+        return 'HiLook';
+    }
+
+    // Axis
+    if (modelLower.includes('axis') || modelLower.match(/^(p|m|q|f)\d{4}/i)) {
+        return 'Axis';
+    }
+
+    // Cisco
+    if (modelLower.includes('cisco') || modelLower.match(/^(ws-|ie-|c9|cat|sg|sf)/i)) {
+        return 'Cisco';
+    }
+
+    // Ubiquiti
+    if (modelLower.includes('ubiquiti') || modelLower.includes('unifi') ||
+        modelLower.match(/^(usg|usw|uap|udm|uvc)/i)) {
+        return 'Ubiquiti';
+    }
+
+    // TP-Link
+    if (modelLower.includes('tp-link') || modelLower.match(/^(tl-|archer|deco)/i)) {
+        return 'TP-Link';
+    }
+
+    // MikroTik
+    if (modelLower.includes('mikrotik') || modelLower.includes('routerboard') ||
+        modelLower.match(/^(rb|ccr|crs|hex|hap)/i)) {
+        return 'MikroTik';
+    }
+
+    // Default fallback
+    return 'Desconhecido';
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -533,6 +600,38 @@ router.post('/confirm-import', async (req, res) => {
                     }
                 }
 
+                // Normalize and validate status
+                const allowedStatuses = ['active', 'inactive', 'maintenance', 'error'];
+                let deviceStatus = (device.status || 'active').toLowerCase().trim();
+
+                // Map common variations
+                const statusMappings = {
+                    'ativo': 'active',
+                    'ativa': 'active',
+                    'inativo': 'inactive',
+                    'inativa': 'inactive',
+                    'manutenção': 'maintenance',
+                    'manutencao': 'maintenance',
+                    'erro': 'error',
+                    'offline': 'inactive',
+                    'online': 'active',
+                    'on': 'active',
+                    'off': 'inactive',
+                    'ok': 'active',
+                    'up': 'active',
+                    'down': 'inactive'
+                };
+
+                if (statusMappings[deviceStatus]) {
+                    deviceStatus = statusMappings[deviceStatus];
+                }
+
+                // Final validation - default to 'active' if invalid
+                if (!allowedStatuses.includes(deviceStatus)) {
+                    console.warn(`Invalid status '${device.status}' for device ${device.serial_number}, defaulting to 'active'`);
+                    deviceStatus = 'active';
+                }
+
                 await dbPool.query(`
                     INSERT INTO network_devices (
                         serial_number, ip_address, mac_address, model, manufacturer,
@@ -553,12 +652,13 @@ router.post('/confirm-import', async (req, res) => {
                     device.serial_number,
                     device.ip_address,
                     device.mac_address || null,
-                    device.model,
-                    device.manufacturer,
+                    device.model || 'Unknown',
+                    // Auto-detect manufacturer if not provided
+                    device.manufacturer || detectManufacturer(device.model, device.serial_number),
                     categorySlug,
                     device.firmware_version || null,
                     device.hostname || null,
-                    device.status || 'active',
+                    deviceStatus,
                     defaultVlanId,
                     `Importado via IA em ${new Date().toLocaleString('pt-BR')}. ${device._categoryReason || ''}`,
                     req.projectId

@@ -115,6 +115,11 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
     // AI Terminal hook for logging
     const aiTerminal = useAITerminal()
 
+    // Debug: Log state changes
+    useEffect(() => {
+        console.log('[SmartImport] State changed - loading:', loading, 'progress:', uploadProgress, 'phase:', uploadPhase)
+    }, [loading, uploadProgress, uploadPhase])
+
     useEffect(() => {
         if (open) {
             aiApi.setProjectId(projectId)
@@ -148,14 +153,18 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
         const fileSizeKB = file.size / 1024
         const fileSizeMB = fileSizeKB / 1024
 
-        // Store file info for display
+        console.log('[Upload] Starting upload for:', file.name, 'Size:', fileSizeMB.toFixed(2), 'MB')
+
+        // Store file info for display - SET THESE FIRST before loading
         setUploadingFile({ name: file.name, size: file.size })
         setUploadPhase('uploading')
+        setUploadProgress(5) // Start at 5% immediately to show progress
         setLoading(true)
         setError(null)
         setIpCorrectionApplied(false)
         setIpAnalysis(null)
-        setUploadProgress(0)
+
+        console.log('[Upload] State set - loading:', true, 'progress:', 5)
 
         // Log to AI Terminal
         aiTerminal.clearTerminal()
@@ -164,16 +173,21 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
 
         // Calculate estimated upload time based on file size
         // Assume ~500KB/s upload speed for simulation
-        const estimatedUploadMs = Math.max((fileSizeKB / 500) * 1000, 2000) // Minimum 2 seconds
-        const uploadSteps = 80 // Upload goes to 80%
+        const estimatedUploadMs = Math.max((fileSizeKB / 500) * 1000, 3000) // Minimum 3 seconds
+        const uploadSteps = 75 // Upload goes to 80% (5 + 75 = 80)
         const stepInterval = estimatedUploadMs / uploadSteps
 
-        // Start simulated progress
-        let currentProgress = 0
+        console.log('[Upload] Estimated time:', estimatedUploadMs, 'ms, interval:', stepInterval, 'ms')
+
+        // Start simulated progress 
+        let currentProgress = 5
         const progressInterval = setInterval(() => {
             currentProgress += 1
-            if (currentProgress <= uploadSteps) {
+            if (currentProgress <= 80) {
                 setUploadProgress(currentProgress)
+                if (currentProgress % 20 === 0) {
+                    console.log('[Upload] Progress:', currentProgress, '%')
+                }
             }
         }, stepInterval)
 
@@ -666,130 +680,42 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                             <input {...getInputProps()} />
 
                             {loading ? (
-                                <Box sx={{ width: '100%', maxWidth: 480, textAlign: 'center' }}>
-                                    {/* Animated upload icon */}
-                                    <Box
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            mx: 'auto',
-                                            mb: 3,
-                                            background: uploadPhase === 'uploading'
-                                                ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`
-                                                : uploadPhase === 'processing'
-                                                    ? `linear-gradient(135deg, ${theme.palette.warning.main} 0%, ${theme.palette.primary.main} 100%)`
-                                                    : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.success.main} 100%)`,
-                                            boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.3)}`,
-                                            animation: 'pulse 2s ease-in-out infinite',
-                                            '@keyframes pulse': {
-                                                '0%, 100%': { transform: 'scale(1)', opacity: 1 },
-                                                '50%': { transform: 'scale(1.05)', opacity: 0.9 },
-                                            }
-                                        }}
-                                    >
-                                        {uploadPhase === 'uploading' && <CloudUpload sx={{ fontSize: 40, color: 'white' }} />}
-                                        {uploadPhase === 'processing' && <FilePresent sx={{ fontSize: 40, color: 'white' }} />}
-                                        {uploadPhase === 'analyzing' && <Psychology sx={{ fontSize: 40, color: 'white', animation: 'spin 2s linear infinite', '@keyframes spin': { '100%': { transform: 'rotate(360deg)' } } }} />}
-                                    </Box>
+                                <Box sx={{ width: '100%', maxWidth: 400, textAlign: 'center', py: 4 }}>
+                                    {/* Spinner */}
+                                    <CircularProgress size={48} sx={{ mb: 3 }} />
 
-                                    {/* File info */}
-                                    {uploadingFile && (
-                                        <Box sx={{ mb: 2, p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
-                                            <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 400, mx: 'auto' }}>
-                                                📄 {uploadingFile.name}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {(uploadingFile.size / 1024 / 1024).toFixed(2)} MB
-                                            </Typography>
-                                        </Box>
-                                    )}
-
-                                    {/* Phase title */}
-                                    <Typography variant="h5" fontWeight={600} gutterBottom>
-                                        {uploadPhase === 'uploading' && 'Enviando arquivo'}
-                                        {uploadPhase === 'processing' && 'Processando dados'}
-                                        {uploadPhase === 'analyzing' && 'IA analisando'}
-                                    </Typography>
-
-                                    {/* Big percentage */}
-                                    <Typography variant="h2" fontWeight={700} color="primary" sx={{ mb: 2 }}>
+                                    {/* Progress percentage */}
+                                    <Typography variant="h4" fontWeight={700} color="primary" sx={{ mb: 1 }}>
                                         {uploadProgress}%
                                     </Typography>
 
-                                    {/* Progress bar with gradient */}
-                                    <Box sx={{ position: 'relative', mb: 2 }}>
-                                        <LinearProgress
-                                            variant="determinate"
-                                            value={uploadProgress}
-                                            sx={{
-                                                height: 14,
-                                                borderRadius: 7,
-                                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                                '& .MuiLinearProgress-bar': {
-                                                    borderRadius: 7,
-                                                    background: uploadPhase === 'uploading'
-                                                        ? `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`
-                                                        : uploadPhase === 'processing'
-                                                            ? `linear-gradient(90deg, ${theme.palette.warning.main} 0%, ${theme.palette.primary.main} 100%)`
-                                                            : `linear-gradient(90deg, ${theme.palette.secondary.main} 0%, ${theme.palette.success.main} 100%)`,
-                                                    transition: 'transform 0.2s ease',
-                                                }
-                                            }}
-                                        />
-                                        {/* Animated shimmer effect */}
-                                        <Box
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                left: 0,
-                                                right: 0,
-                                                bottom: 0,
-                                                borderRadius: 7,
-                                                overflow: 'hidden',
-                                                pointerEvents: 'none',
-                                                '&::after': {
-                                                    content: '""',
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: '-100%',
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
-                                                    animation: 'shimmer 1.5s infinite',
-                                                },
-                                                '@keyframes shimmer': {
-                                                    '0%': { left: '-100%' },
-                                                    '100%': { left: '100%' },
-                                                }
-                                            }}
-                                        />
-                                    </Box>
+                                    {/* Progress bar */}
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={uploadProgress}
+                                        sx={{
+                                            height: 8,
+                                            borderRadius: 4,
+                                            mb: 2,
+                                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                            '& .MuiLinearProgress-bar': {
+                                                borderRadius: 4,
+                                                backgroundColor: theme.palette.primary.main,
+                                            }
+                                        }}
+                                    />
 
-                                    {/* Phase steps */}
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 3 }}>
-                                        <Box sx={{ textAlign: 'center', opacity: uploadPhase === 'uploading' ? 1 : 0.5 }}>
-                                            <CloudUpload sx={{ color: uploadPhase === 'uploading' ? 'primary.main' : 'text.disabled' }} />
-                                            <Typography variant="caption" display="block" fontWeight={uploadPhase === 'uploading' ? 600 : 400}>
-                                                Upload
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ textAlign: 'center', opacity: uploadPhase === 'processing' ? 1 : 0.5 }}>
-                                            <FilePresent sx={{ color: uploadPhase === 'processing' ? 'warning.main' : 'text.disabled' }} />
-                                            <Typography variant="caption" display="block" fontWeight={uploadPhase === 'processing' ? 600 : 400}>
-                                                Processar
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ textAlign: 'center', opacity: uploadPhase === 'analyzing' ? 1 : 0.5 }}>
-                                            <Psychology sx={{ color: uploadPhase === 'analyzing' ? 'secondary.main' : 'text.disabled' }} />
-                                            <Typography variant="caption" display="block" fontWeight={uploadPhase === 'analyzing' ? 600 : 400}>
-                                                Análise IA
-                                            </Typography>
-                                        </Box>
-                                    </Box>
+                                    {/* Loading text */}
+                                    <Typography variant="body1" color="text.secondary">
+                                        Carregando arquivo...
+                                    </Typography>
+
+                                    {/* File info if available */}
+                                    {uploadingFile && (
+                                        <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
+                                            {uploadingFile.name} ({(uploadingFile.size / 1024 / 1024).toFixed(2)} MB)
+                                        </Typography>
+                                    )}
                                 </Box>
                             ) : (
                                 <>
@@ -1133,8 +1059,8 @@ export default function SmartImportModal({ open, onClose, onSuccess, projectId }
                     </Box>
                 )}
 
-                {/* AI Terminal - Toggle Button and Component - Show from step 0 if AI is available or checking */}
-                {(aiAvailable === true || aiAvailable === null) && activeStep < 3 && (
+                {/* AI Terminal - Toggle Button and Component - Always show on step 0, or if AI available */}
+                {(activeStep === 0 || (aiAvailable && activeStep < 3)) && (
                     <Box sx={{ mt: 2 }}>
                         <Button
                             size="small"

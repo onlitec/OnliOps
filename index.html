@@ -44,6 +44,36 @@
       })
     }
   </script>
+  <!-- Force clear old service workers -->
+  <script>
+    // Version check - increment this to force cache clear
+    const APP_VERSION = '2.0.2';
+    const storedVersion = localStorage.getItem('onliops_version');
+    if (storedVersion !== APP_VERSION) {
+      console.log('New version detected, clearing caches...');
+      // Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            registration.unregister();
+            console.log('Service Worker unregistered');
+          });
+        });
+      }
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name);
+            console.log('Cache deleted:', name);
+          });
+        });
+      }
+      localStorage.setItem('onliops_version', APP_VERSION);
+      // Reload after clearing
+      setTimeout(() => location.reload(true), 500);
+    }
+  </script>
 </head>
 
 <body>
