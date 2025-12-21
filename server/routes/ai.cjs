@@ -148,7 +148,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         const filePath = req.file.path;
 
         // Parse the workbook
-        const workbookInfo = excelProcessor.parseWorkbook(filePath);
+        const workbookInfo = await excelProcessor.parseWorkbook(filePath);
 
         if (!workbookInfo.success) {
             fs.unlinkSync(filePath); // Clean up
@@ -250,7 +250,7 @@ router.post('/analyze-ips', async (req, res) => {
         for (const sheet of sessionData.sheets) {
             if (!sheet.isDeviceSheet) continue;
 
-            const extractResult = excelProcessor.extractSheetData(
+            const extractResult = await excelProcessor.extractSheetData(
                 sessionData.filePath,
                 sheet.name,
                 sheet.autoMapping
@@ -307,7 +307,7 @@ router.post('/correct-ips', async (req, res) => {
         for (const config of configs) {
             if (!config.enabled) continue;
 
-            const extractResult = excelProcessor.extractSheetData(
+            const extractResult = await excelProcessor.extractSheetData(
                 sessionData.filePath,
                 config.sheetName,
                 config.columnMapping
@@ -404,7 +404,7 @@ router.post('/preview-import', async (req, res) => {
             for (const config of sheetConfigs) {
                 if (!config.enabled) continue;
 
-                const extractResult = excelProcessor.extractSheetData(
+                const extractResult = await excelProcessor.extractSheetData(
                     sessionData.filePath,
                     config.sheetName,
                     config.columnMapping

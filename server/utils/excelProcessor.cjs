@@ -2,9 +2,11 @@
  * Excel Processor Utility
  * Handles parsing of Excel files including multi-sheet workbooks
  * With intelligent header detection and content filtering
+ * 
+ * Migrated to ExcelJS for better security and stability
  */
 
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const path = require('path');
 
 class ExcelProcessor {
@@ -144,13 +146,22 @@ class ExcelProcessor {
      * Parse an Excel file and return information about all sheets
      * @param {string} filePath - Path to the Excel file
      */
-    parseWorkbook(filePath) {
+    async parseWorkbook(filePath) {
         try {
-            const workbook = XLSX.readFile(filePath);
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.readFile(filePath);
 
-            const sheetsInfo = workbook.SheetNames.map(sheetName => {
-                const sheet = workbook.Sheets[sheetName];
-                const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            const sheetsInfo = [];
+
+            workbook.eachSheet((sheet, sheetId) => {
+                // Convert sheet to 2D array
+                const data = [];
+                sheet.eachRow({ includeEmpty: true }, (row) => {
+                    // row.values includes an empty item at index 0 for 1-based indexing in ExcelJS
+                    // We slice it off to work with standard 0-based arrays
+                    const rowValues = row.values.length > 0 ? row.values.slice(1) : [];
+                    data.push(rowValues);
+                });
 
                 // Find header row automatically
                 const { headerRowIndex, headers } = this.findHeaderRow(data);
@@ -174,26 +185,31 @@ class ExcelProcessor {
                 const sampleRows = validDataRows.slice(0, 3).map(row => {
                     const obj = {};
                     headers.forEach((header, idx) => {
-                        if (header && row[idx] !== undefined && row[idx] !== '') {
-                            obj[header] = row[idx];
+                        if (header && row[idx] !== undefined && row[idx] !== null && row[idx] !== '') {
+                            // Extract value from ExcelJS cell object if needed
+                            let value = row[idx];
+                            if (typeof value === 'object' && value !== null) {
+                                value = value.text || value.result || value.toString();
+                            }
+                            obj[header] = value;
                         }
                     });
                     return obj;
                 });
 
-                return {
-                    name: sheetName,
+                sheetsInfo.push({
+                    name: sheet.name,
                     headers: headers.filter(h => h), // Remove empty headers
                     headerRowIndex,
                     rowCount,
                     sampleRows
-                };
+                });
             });
 
             return {
                 success: true,
                 fileName: path.basename(filePath),
-                sheetCount: workbook.SheetNames.length,
+                sheetCount: workbook.worksheets.length,
                 sheets: sheetsInfo
             };
         } catch (error) {
@@ -211,10 +227,12 @@ class ExcelProcessor {
      * @param {string} sheetName - Name of the sheet to extract
      * @param {Object} columnMapping - Mapping of standard fields to sheet columns
      */
-    extractSheetData(filePath, sheetName, columnMapping = null) {
+    async extractSheetData(filePath, sheetName, columnMapping = null) {
         try {
-            const workbook = XLSX.readFile(filePath);
-            const sheet = workbook.Sheets[sheetName];
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.readFile(filePath);
+
+            const sheet = workbook.getWorksheet(sheetName);
 
             if (!sheet) {
                 return {
@@ -224,7 +242,11 @@ class ExcelProcessor {
             }
 
             // Get raw data as 2D array
-            const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            const rawData = [];
+            sheet.eachRow({ includeEmpty: true }, (row) => {
+                const rowValues = row.values.length > 0 ? row.values.slice(1) : [];
+                rawData.push(rowValues);
+            });
 
             // Find header row
             const { headerRowIndex, headers } = this.findHeaderRow(rawData);
@@ -241,7 +263,15 @@ class ExcelProcessor {
                 const obj = {};
                 headers.forEach((header, idx) => {
                     if (header && row[idx] !== undefined) {
-                        obj[header] = row[idx];
+                        let value = row[idx];
+                        // Handle potential object values from ExcelJS (e.g. hyperlinks, dates)
+                        if (value && typeof value === 'object') {
+                            if (value.text) value = value.text;
+                            else if (value.result) value = value.result;
+                            // Don't stringify dates unless strictly necessary, but for now safe string conversion:
+                            else value = String(value);
+                        }
+                        obj[header] = value;
                     }
                 });
                 return obj;
@@ -726,4 +756,3 @@ class ExcelProcessor {
 }
 
 module.exports = new ExcelProcessor();
-
