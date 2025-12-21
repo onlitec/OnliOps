@@ -1,0 +1,183 @@
+# ============================================
+# OnliOps - Docker Compose Production
+# ============================================
+# Deploy via Portainer Stack
+# URL: onliops.onlitec.com.br
+# ============================================
+
+services:
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  database:
+    image: postgres:15-alpine
+    container_name: onliops-database
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-onliops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-onliops}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onliops} -d ${POSTGRES_DB:-onliops}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - onliops-internal
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ==========================================
+  # Ollama - Local AI Model Server
+  # ==========================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: onliops-ollama
+    restart: always
+    volumes:
+      - ollama_data:/root/.ollama
+    expose:
+      - "11434"
+    networks:
+      - onliops-internal
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # ==========================================
+  # Node.js Backend API
+  # ==========================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: onliops-api:latest
+    container_name: onliops-api
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      # Database
+      PGHOST: database
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-onliops}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-onliops}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-onliops}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB:-onliops}
+      # Ollama (internal Docker network)
+      OLLAMA_URL: http://ollama:11434
+      AI_MODEL: ${AI_MODEL:-phi3}
+      # External AI APIs (optional)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    volumes:
+      - uploads_data:/app/uploads
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - onliops-internal
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ==========================================
+  # React Frontend (Nginx) - MAIN SERVICE
+  # ==========================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - VITE_API_URL=/api
+        - VITE_APP_URL=https://onliops.onlitec.com.br
+    image: onliops-web:latest
+    container_name: onliops-web
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    labels:
+      # Traefik Labels (caso use Traefik como reverse proxy)
+      - "traefik.enable=true"
+      - "traefik.http.routers.onliops.rule=Host(`onliops.onlitec.com.br`)"
+      - "traefik.http.routers.onliops.entrypoints=websecure"
+      - "traefik.http.routers.onliops.tls=true"
+      - "traefik.http.routers.onliops.tls.certresolver=letsencrypt"
+      - "traefik.http.services.onliops.loadbalancer.server.port=80"
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.onliops-http.rule=Host(`onliops.onlitec.com.br`)"
+      - "traefik.http.routers.onliops-http.entrypoints=web"
+      - "traefik.http.routers.onliops-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - onliops-internal
+      - traefik-public
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+# ==========================================
+# Volumes (Persistent Data)
+# ==========================================
+volumes:
+  postgres_data:
+    name: onliops-postgres-data
+  uploads_data:
+    name: onliops-uploads
+  ollama_data:
+    name: onliops-ollama-models
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  onliops-internal:
+    name: onliops-internal
+    driver: bridge
+  traefik-public:
+    external: true
