@@ -7,6 +7,10 @@ const cors = require('cors')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
+const bcrypt = require('bcrypt')
+
+// Security: bcrypt salt rounds for password hashing
+const BCRYPT_SALT_ROUNDS = 10
 
 // AI Integration
 const aiRoutes = require('./routes/ai.cjs')
@@ -42,12 +46,22 @@ app.use('/api/branding/files', express.static(brandingPath, {
 }))
 
 
+// Database connection - credentials MUST be provided via environment variables
+const requiredEnvVars = ['PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD']
+const missingVars = requiredEnvVars.filter(v => !process.env[v])
+
+if (missingVars.length > 0 && process.env.NODE_ENV === 'production') {
+    console.error(`FATAL: Missing required environment variables: ${missingVars.join(', ')}`)
+    console.error('Please configure your .env file with database credentials.')
+    process.exit(1)
+}
+
 const pool = new Pool({
     host: process.env.PGHOST || '127.0.0.1',
     port: parseInt(process.env.PGPORT) || 5432,
-    database: process.env.PGDATABASE || 'calabasas_local',
-    user: process.env.PGUSER || 'calabasas_admin',
-    password: process.env.PGPASSWORD || 'Calabasas@2025!'
+    database: process.env.PGDATABASE || 'onliops',
+    user: process.env.PGUSER || 'onliops',
+    password: process.env.PGPASSWORD
 })
 
 // Initialize database on startup
@@ -85,9 +99,25 @@ app.post('/api/auth/login', async (req, res) => {
 
         const user = rows[0]
 
-        // Verify password
-        // For now using simple comparison - in production use bcrypt
-        if (user.password_hash !== password) {
+        // Verify password using bcrypt
+        // Supports both: bcrypt hashed passwords AND legacy plain text (for migration)
+        let isPasswordValid = false
+
+        if (user.password_hash && user.password_hash.startsWith('$2')) {
+            // Password is bcrypt hashed
+            isPasswordValid = await bcrypt.compare(password, user.password_hash)
+        } else {
+            // Legacy: plain text password (will be migrated on next password change)
+            isPasswordValid = user.password_hash === password
+            if (isPasswordValid) {
+                // Auto-migrate: hash the password for future logins
+                const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS)
+                await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, user.id])
+                console.log(`[Auth] Auto-migrated password to bcrypt for user: ${user.email}`)
+            }
+        }
+
+        if (!isPasswordValid) {
             console.log(`[Auth] Invalid password for user: ${emailOrUsername}`)
             return res.status(401).json({ error: 'Email ou senha inválidos' })
         }
@@ -129,12 +159,15 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'Este email já está cadastrado' })
         }
 
-        // Create user
+        // Hash password before storing
+        const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS)
+
+        // Create user with hashed password
         const { rows } = await pool.query(`
             INSERT INTO users (email, password_hash, name, role) 
             VALUES ($1, $2, $3, 'viewer') 
             RETURNING id, email, name, role, created_at
-        `, [email, password, name])
+        `, [email, hashedPassword, name])
 
         console.log(`[Auth] New user registered: ${email}`)
 
