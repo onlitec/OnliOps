@@ -1,9 +1,0 @@
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <sheetData>
-    <row r="1"><c t="inlineStr"><is><t>Passo</t></is></c><c t="inlineStr"><is><t>Descrição</t></is></c></row>
-    <row r="2"><c t="inlineStr"><is><t>1</t></is></c><c t="inlineStr"><is><t>Comm &gt; Network &gt; Advanced: Enable Voice VLAN=Yes</t></is></c></row>
-    <row r="3"><c t="inlineStr"><is><t>2</t></is></c><c t="inlineStr"><is><t>Voice VLAN ID=30; Priority=6</t></is></c></row>
-    <row r="4"><c t="inlineStr"><is><t>3</t></is></c><c t="inlineStr"><is><t>Dados em VLAN 20; Vídeo em VLAN 10</t></is></c></row>
-    <row r="5"><c t="inlineStr"><is><t>4</t></is></c><c t="inlineStr"><is><t>Ativar LLDP para descoberta automática</t></is></c></row>
-  </sheetData>
-</worksheet>

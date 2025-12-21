@@ -1,7 +1,0 @@
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <sheetData>
-    <row r="1"><c t="inlineStr"><is><t>Switch</t></is></c><c t="inlineStr"><is><t>Modelo</t></is></c><c t="inlineStr"><is><t>IP</t></is></c><c t="inlineStr"><is><t>VLAN</t></is></c><c t="inlineStr"><is><t>QoS</t></is></c><c t="inlineStr"><is><t>Voice VLAN</t></is></c><c t="inlineStr"><is><t>Observações</t></is></c></row>
-    <row r="2"><c t="inlineStr"><is><t>SW-CORE-01</t></is></c><c t="inlineStr"><is><t>DS-3E1526P-EI</t></is></c><c t="inlineStr"><is><t>10.10.99.10</t></is></c><c t="inlineStr"><is><t>99</t></is></c><c t="inlineStr"><is><t>Trust DSCP</t></is></c><c t="inlineStr"><is><t>30</t></is></c><c t="inlineStr"><is><t>Trunk 10,20,30,99</t></is></c></row>
-    <row r="3"><c t="inlineStr"><is><t>SW-ACC-01</t></is></c><c t="inlineStr"><is><t>DS-3E1309P-EI</t></is></c><c t="inlineStr"><is><t>10.10.99.21</t></is></c><c t="inlineStr"><is><t>99</t></is></c><c t="inlineStr"><is><t>Trust DSCP</t></is></c><c t="inlineStr"><is><t>30</t></is></c><c t="inlineStr"><is><t>Hybrid; PoE</t></is></c></row>
-  </sheetData>
-</worksheet>
