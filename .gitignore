@@ -6,3 +6,16 @@ BKP/
 *.zip
 .env.production
 docs/
+
+# Local production files
+webhook.log
+*.original
+setup.sh
+webhook-listener.js
+
+# Documentation (local)
+ANALYSIS.md
+AUTO_DEPLOY.md
+DEPLOY_GUIDE.md
+DEPLOY_SUCCESS.md
+FIX_500_ERRORS.md
