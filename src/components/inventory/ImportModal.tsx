@@ -73,7 +73,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ onClose, onSuccess }) => {
         if (modelLower.includes('camera') || modelLower.includes('cam')) return 'camera'
         if (modelLower.includes('controller')) return 'controller'
 
-        return 'converter' // Default fallback to satisfy DB constraint (allowed: camera, nvr, switch, router, firewall, access_point, reader, controller, converter)
+        return 'converter' // Default fallback to satisfy DB constraint (allowed: camera, nvr, dvr, switch, router, firewall, access_point, reader, controller, converter, patch_panel, server, pc, ap_wifi, intercom, elevator_recorder, other)
     }
 
     const mapSADPToDevice = (row: any): ParsedDevice => {
@@ -220,11 +220,11 @@ const ImportModal: React.FC<ImportModalProps> = ({ onClose, onSuccess }) => {
                 if (type === 'routers') type = 'router';
                 if (type === 'access points' || type === 'access_points' || type === 'ap_wifi') type = 'access_point';
                 if (type === 'nvrs' || type === 'dvr') type = 'nvr';
-                if (type === 'server') type = 'controller';
+                if (type === 'server') type = 'server';
                 if (type === 'sensor') type = 'converter';
-                if (type === 'other') type = 'converter';
+                if (type === 'other') type = 'other';
 
-                const allowed = ['camera', 'nvr', 'switch', 'router', 'firewall', 'access_point', 'reader', 'controller', 'converter'];
+                const allowed = ['camera', 'nvr', 'dvr', 'switch', 'router', 'firewall', 'access_point', 'reader', 'controller', 'converter', 'patch_panel', 'server', 'pc', 'ap_wifi', 'intercom', 'elevator_recorder', 'other'];
                 if (!allowed.includes(type)) type = 'converter';
 
                 return { ...d, device_type: type };

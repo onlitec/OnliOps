@@ -618,20 +618,24 @@ app.get('/api/network_devices', async (req, res) => {
 // Endpoint para criar um dispositivo
 app.post('/api/network_devices', async (req, res) => {
     const device = req.body
+    console.log('[API] Creating device:', device.hostname || device.model, 'with vlan_id:', device.vlan_id)
 
-    // Buscar VLAN padrão se não fornecida
+    // Buscar VLAN padrão se não fornecida, ou validar a fornecida
     let vlanId = device.vlan_id
-    if (!vlanId) {
-        try {
-            const vlanResult = await pool.query('SELECT id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1', [req.projectId])
-            if (vlanResult.rows.length > 0) {
-                vlanId = vlanResult.rows[0].id
-            } else {
-                vlanId = 1 // Fallback
+    try {
+        if (!vlanId) {
+            const vlanResult = await pool.query('SELECT vlan_id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1', [req.projectId])
+            vlanId = vlanResult.rows.length > 0 ? vlanResult.rows[0].vlan_id : null
+        } else {
+            const vlanCheck = await pool.query('SELECT vlan_id FROM vlans WHERE vlan_id = $1 AND project_id = $2', [vlanId, req.projectId])
+            if (vlanCheck.rows.length === 0) {
+                console.warn(`[API] VLAN ${vlanId} not found for project ${req.projectId}, resetting to null`)
+                vlanId = null
             }
-        } catch (e) {
-            vlanId = 1
         }
+    } catch (e) {
+        console.error('[API] VLAN validation error:', e)
+        vlanId = null
     }
 
     try {
@@ -744,25 +748,24 @@ app.post('/api/devices/import', async (req, res) => {
     // Buscar VLAN padrão
     let defaultVlanId = null
     try {
-        const vlanResult = await pool.query('SELECT id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1', [req.projectId])
+        const vlanResult = await pool.query('SELECT vlan_id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1', [req.projectId])
         if (vlanResult.rows.length > 0) {
-            defaultVlanId = vlanResult.rows[0].id
-            console.log(`Using VLAN ID: ${defaultVlanId}`)
-        } else {
-            console.error('No VLANs found in database!')
-            return res.status(500).json({ error: 'No VLANs configured in database' })
+            defaultVlanId = vlanResult.rows[0].vlan_id
         }
+        console.log('[Import] Default VLAN for project:', req.projectId, 'is:', defaultVlanId)
     } catch (error) {
-        console.error('Error fetching VLAN:', error)
-        return res.status(500).json({ error: 'Database error fetching VLAN' })
+        console.error('[Import] Error fetching VLAN:', error)
+        defaultVlanId = null
     }
 
     for (const device of devices) {
         try {
             // Allowed device types to satisfy DB Check Constraint
             const ALLOWED_DEVICE_TYPES = [
-                'camera', 'nvr', 'switch', 'router', 'firewall',
-                'access_point', 'reader', 'controller', 'converter'
+                'camera', 'nvr', 'dvr', 'switch', 'router', 'firewall',
+                'access_point', 'reader', 'controller', 'converter',
+                'patch_panel', 'server', 'pc', 'ap_wifi', 'intercom',
+                'elevator_recorder', 'other'
             ];
 
             // Map device_type
@@ -775,9 +778,9 @@ app.post('/api/devices/import', async (req, res) => {
             else if (deviceType === 'dvr') deviceType = 'nvr';
             else if (deviceType === 'nvrs') deviceType = 'nvr';
             else if (deviceType === 'ap_wifi' || deviceType === 'access points') deviceType = 'access_point';
-            else if (deviceType === 'server') deviceType = 'controller';
+            else if (deviceType === 'server') deviceType = 'server';
             else if (deviceType === 'sensor') deviceType = 'converter';
-            else if (deviceType === 'other') deviceType = 'converter';
+            else if (deviceType === 'other') deviceType = 'other';
 
             // Final validation - fallback to converter if still invalid
             if (!ALLOWED_DEVICE_TYPES.includes(deviceType)) {

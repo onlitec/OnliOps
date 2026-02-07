@@ -35,7 +35,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ device, onClose }) => {
         switch_port: device?.switch_port || '',
         connected_nvr_id: device?.connected_nvr_id || '',
         status: device?.status || 'active',
-        vlan_id: device?.vlan_id || 1
+        vlan_id: device?.vlan_id || ''
     })
 
     useEffect(() => {
@@ -90,7 +90,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ device, onClose }) => {
 
             const payload: any = {
                 ...formData,
-                vlan_id: parseInt(formData.vlan_id.toString()),
+                vlan_id: formData.vlan_id ? parseInt(formData.vlan_id.toString()) : null,
                 connected_nvr_id: formData.connected_nvr_id || null
             }
 
@@ -342,6 +342,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ device, onClose }) => {
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
+                                <option value="">Nenhuma</option>
                                 {vlans.map(vlan => (
                                     <option key={vlan.vlan_id} value={vlan.vlan_id}>
                                         VLAN {vlan.vlan_id} - {vlan.name}

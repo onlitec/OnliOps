@@ -68,6 +68,9 @@ function AppInner() {
         <Route path="settings/ai" element={<AISettings />} />
 
         {/* Redirects/Fallbacks */}
+        <Route path="admin/projects" element={<Navigate to="/settings/projects" replace />} />
+        <Route path="devices" element={<Navigate to="/devices/all" replace />} />
+        <Route path="alerts" element={<Navigate to="/dashboard" replace />} />
         <Route path="inventory" element={<Navigate to="/dashboard" replace />} />
         <Route path="simulations/*" element={<Navigate to="/dashboard" replace />} />
       </Route>
