@@ -9,7 +9,8 @@ import {
   Notifications as NotificationsIcon,
   Palette as ThemeIcon,
   FolderSpecial as ProjectsIcon,
-  Psychology as AIIcon
+  Psychology as AIIcon,
+  Business as BusinessIcon
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 
@@ -36,6 +37,13 @@ export default function Settings() {
       description: 'Administre projetos (tenants) e exclua dados',
       icon: <ProjectsIcon sx={{ fontSize: 48, color: '#f97316' }} />,
       path: '/settings/projects',
+      available: true
+    },
+    {
+      title: 'Gerenciamento de Clientes',
+      description: 'Administre clientes e realize exclusões seguras',
+      icon: <BusinessIcon sx={{ fontSize: 48, color: '#6366f1' }} />,
+      path: '/settings/clients',
       available: true
     },
     {

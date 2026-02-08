@@ -42,9 +42,9 @@ function getSystemPreference(): 'light' | 'dark' {
 // Technical Color Palette - Grafana-inspired
 const colors = {
     primary: {
-        main: '#3b82f6',      // Blue - more technical
-        light: '#60a5fa',
-        dark: '#2563eb',
+        main: '#e60012',      // Official HikCentral Red
+        light: '#ff3d3d',
+        dark: '#b30000',
     },
     secondary: {
         main: '#8b5cf6',      // Purple
@@ -62,9 +62,9 @@ const colors = {
         dark: '#ea580c',
     },
     error: {
-        main: '#ef4444',      // Red
-        light: '#f87171',
-        dark: '#dc2626',
+        main: '#e60012',      // Official HikCentral Red
+        light: '#ff3d3d',
+        dark: '#b30000',
     },
     info: {
         main: '#06b6d4',      // Cyan
@@ -75,13 +75,13 @@ const colors = {
 
 // Minimal gradients for technical UI
 export const gradients = {
-    primary: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+    primary: 'linear-gradient(135deg, #e60012 0%, #b30000 100%)',
     secondary: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
     success: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
     warning: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-    error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+    error: 'linear-gradient(135deg, #e60012 0%, #b30000 100%)',
     info: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-    dark: 'linear-gradient(180deg, #111217 0%, #0d0e12 100%)',
+    dark: 'linear-gradient(180deg, #151b26 0%, #0f141d 100%)',
     glass: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
 }
 
@@ -91,7 +91,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
         if (saved && ['light', 'dark', 'auto'].includes(saved)) {
             return saved as ThemeMode
         }
-        return 'dark' // Default to dark for technical UI
+        return 'light' // Default to light for HikCentral layout
     })
 
     const [fontScale, setFontScale] = useState<FontScale>(() => {
@@ -152,14 +152,14 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
                 divider: 'rgba(255, 255, 255, 0.06)',
             } : {
                 background: {
-                    default: '#f3f4f6',
+                    default: '#f0f2f5',
                     paper: '#ffffff',
                 },
                 text: {
-                    primary: '#1f2937',
-                    secondary: '#6b7280',
+                    primary: '#111827',
+                    secondary: '#4b5563',
                 },
-                divider: 'rgba(0, 0, 0, 0.08)',
+                divider: 'rgba(0, 0, 0, 0.15)', // More visible divider
             }),
         },
         typography: {
@@ -252,14 +252,18 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
                 },
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        borderRadius: 6,
-                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 4, // Slightly sharper corners
+                        border: theme.palette.mode === 'light'
+                            ? `2px solid rgba(0, 0, 0, 0.12)`
+                            : `1px solid ${theme.palette.divider}`,
                         backgroundImage: 'none',
-                        transition: 'border-color 0.15s ease',
+                        boxShadow: 'none',
+                        transition: 'all 0.15s ease',
                         '&:hover': {
-                            borderColor: theme.palette.mode === 'dark'
-                                ? 'rgba(255,255,255,0.12)'
-                                : 'rgba(0,0,0,0.15)',
+                            borderColor: theme.palette.primary.main,
+                            boxShadow: theme.palette.mode === 'light'
+                                ? `0 0 0 1px ${theme.palette.primary.main}`
+                                : 'none',
                         },
                     }),
                 },
@@ -294,9 +298,9 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
                 styleOverrides: {
                     root: ({ theme }) => ({
                         backgroundImage: 'none',
-                        backgroundColor: theme.palette.mode === 'dark' ? '#181b1f' : '#ffffff',
-                        borderBottom: `1px solid ${theme.palette.divider}`,
-                        boxShadow: 'none',
+                        backgroundColor: '#151b26', // HikCentral Navbar dark
+                        borderBottom: `2px solid ${theme.palette.primary.main}`, // Red accent line
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                     }),
                 },
             },

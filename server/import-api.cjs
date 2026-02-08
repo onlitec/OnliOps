@@ -186,7 +186,7 @@ const DEFAULT_PROJECT_ID = 'f6192f8f-1581-4d3f-86fc-fc7c4d86cf15'; // Default Pr
 
 app.use(async (req, res, next) => {
     // Skip for global endpoints
-    if (req.path.startsWith('/api/clients') || req.path === '/api/health' || req.path.startsWith('/api/auth')) {
+    if (req.path.startsWith('/api/clients') || req.path === '/api/health' || req.path.startsWith('/api/auth') || req.path.startsWith('/api/branding')) {
         return next();
     }
 
@@ -225,6 +225,73 @@ app.post('/api/clients', async (req, res) => {
         res.status(201).json(rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete Client (with cascade delete of projects and related data)
+app.delete('/api/clients/:id', async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Get client info first
+        const clientInfo = await client.query('SELECT * FROM clients WHERE id = $1', [id]);
+        if (clientInfo.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        // Get all projects for this client
+        const projects = await client.query('SELECT id FROM projects WHERE client_id = $1', [id]);
+        const projectIds = projects.rows.map(p => p.id);
+
+        const counts = {
+            projects: projectIds.length,
+            devices: 0,
+            alerts: 0
+        };
+
+        if (projectIds.length > 0) {
+            // Count devices and alerts for all projects
+            const deviceCount = await client.query('SELECT COUNT(*) FROM network_devices WHERE project_id = ANY($1)', [projectIds]);
+            counts.devices = parseInt(deviceCount.rows[0].count);
+
+            const alertCount = await client.query('SELECT COUNT(*) FROM alerts WHERE project_id = ANY($1)', [projectIds]);
+            counts.alerts = parseInt(alertCount.rows[0].count);
+
+            // Delete all related data for all client projects
+            await client.query('DELETE FROM simulations WHERE project_id = ANY($1)', [projectIds]);
+            await client.query('DELETE FROM alerts WHERE project_id = ANY($1)', [projectIds]);
+            await client.query('DELETE FROM device_connections WHERE project_id = ANY($1)', [projectIds]);
+            await client.query('DELETE FROM network_devices WHERE project_id = ANY($1)', [projectIds]);
+            await client.query('DELETE FROM vlans WHERE project_id = ANY($1)', [projectIds]);
+            await client.query('DELETE FROM user_permissions WHERE project_id = ANY($1)', [projectIds]);
+
+            // Delete projects
+            await client.query('DELETE FROM projects WHERE client_id = $1', [id]);
+        }
+
+        // Finally delete the client
+        await client.query('DELETE FROM clients WHERE id = $1', [id]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: 'Cliente e todos os dados relacionados excluídos com sucesso',
+            deleted: {
+                client: clientInfo.rows[0].name,
+                ...counts
+            }
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting client:', error);
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
     }
 });
 
@@ -556,6 +623,62 @@ app.delete('/api/categories/:slug', async (req, res) => {
         res.status(204).send()
     } catch (error) {
         console.error('Error deleting category:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// === BRANDING ENDPOINTS ===
+
+// Get branding info
+app.get('/api/branding', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT * FROM branding_info LIMIT 1')
+
+        // If no branding info exists, create default
+        if (rows.length === 0) {
+            const { rows: newRows } = await pool.query(`
+                INSERT INTO branding_info (platform_name, company_name, primary_color, secondary_color)
+                VALUES ('OnliOps', 'Onlitec', '#1976d2', '#dc004e')
+                RETURNING *
+            `)
+            return res.json(newRows[0])
+        }
+
+        res.json(rows[0])
+    } catch (error) {
+        console.error('Error fetching branding:', error)
+        res.status(500).json({ error: error.message })
+    }
+})
+
+// Update branding info
+app.put('/api/branding', async (req, res) => {
+    const { platform_name, company_name, logo_url, primary_color, secondary_color, support_email } = req.body
+    try {
+        // Get existing branding or create if not exists
+        const existing = await pool.query('SELECT id FROM branding_info LIMIT 1')
+
+        if (existing.rows.length === 0) {
+            const { rows } = await pool.query(`
+                INSERT INTO branding_info (platform_name, company_name, logo_url, primary_color, secondary_color, support_email)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING *
+            `, [platform_name, company_name, logo_url, primary_color, secondary_color, support_email])
+            return res.json(rows[0])
+        }
+
+        const { rows } = await pool.query(`
+            UPDATE branding_info 
+            SET platform_name = $1, company_name = $2, logo_url = $3, 
+                primary_color = $4, secondary_color = $5, support_email = $6, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $7
+            RETURNING *
+        `, [platform_name, company_name, logo_url, primary_color, secondary_color, support_email, existing.rows[0].id])
+
+        res.json(rows[0])
+    } catch (error) {
+        console.error('Error updating branding:', error)
         res.status(500).json({ error: error.message })
     }
 })

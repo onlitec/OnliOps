@@ -16,6 +16,7 @@ import { api } from '../../services/api'
 export default function NotificationSettings() {
     const [settings, setSettings] = useState({
         email_enabled: false,
+        recipient_email: '',
         smtp_host: '',
         smtp_port: 587,
         smtp_user: '',
@@ -82,6 +83,17 @@ export default function NotificationSettings() {
                                 />
                             }
                             label="Habilitar Notificações por Email"
+                        />
+
+                        <TextField
+                            label="E-mail do Destinatário"
+                            type="email"
+                            placeholder="exemplo@email.com"
+                            value={settings.recipient_email}
+                            onChange={(e) => setSettings({ ...settings, recipient_email: e.target.value })}
+                            disabled={!settings.email_enabled}
+                            fullWidth
+                            helperText="O endereço de e-mail que receberá os alertas do sistema"
                         />
 
                         <TextField

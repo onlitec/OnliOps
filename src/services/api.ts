@@ -40,6 +40,17 @@ export const api = {
         return response.json()
     },
 
+    deleteClient: async (id: string): Promise<{ success: boolean; message: string; deleted: any }> => {
+        const response = await fetch(`${API_BASE}/clients/${id}`, {
+            method: 'DELETE'
+        })
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to delete client')
+        }
+        return response.json()
+    },
+
     getClientProjects: async (clientId: string): Promise<any[]> => {
         const response = await fetch(`${API_BASE}/clients/${clientId}/projects`)
         if (!response.ok) throw new Error('Failed to fetch client projects')

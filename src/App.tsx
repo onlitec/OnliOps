@@ -24,6 +24,7 @@ import SystemLogs from "@/pages/settings/SystemLogs";
 import NotificationSettings from "@/pages/settings/NotificationSettings";
 import AppearanceSettings from "@/pages/settings/AppearanceSettings";
 import AISettings from "@/pages/settings/AISettings";
+import ClientManagement from "@/pages/settings/ClientManagement";
 import ClientList from "@/pages/ClientList";
 import GlobalDashboard from "@/pages/GlobalDashboard";
 import Monitoring from "@/pages/Monitoring";
@@ -66,6 +67,7 @@ function AppInner() {
         <Route path="settings/notifications" element={<NotificationSettings />} />
         <Route path="settings/appearance" element={<AppearanceSettings />} />
         <Route path="settings/ai" element={<AISettings />} />
+        <Route path="settings/clients" element={<ClientManagement />} />
 
         {/* Redirects/Fallbacks */}
         <Route path="admin/projects" element={<Navigate to="/settings/projects" replace />} />
