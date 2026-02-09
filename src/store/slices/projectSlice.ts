@@ -60,11 +60,18 @@ const projectSlice = createSlice({
         },
         setCurrentClient(state, action: PayloadAction<Client | null>) {
             state.currentClient = action.payload
+            if (action.payload) {
+                localStorage.setItem('currentClientId', action.payload.id)
+            } else {
+                localStorage.removeItem('currentClientId')
+                localStorage.removeItem('currentProjectId')
+            }
         },
         clearProjectContext(state) {
             state.currentProject = null
             state.currentClient = null
             localStorage.removeItem('currentProjectId')
+            localStorage.removeItem('currentClientId')
         }
     },
     extraReducers: (builder) => {

@@ -1,0 +1,35 @@
+
+> onliops-platform@0.0.0 build
+> tsc -b && vite build
+
+NODE_ENV=production is not supported in the .env file. Only NODE_ENV=development is supported to create a development build of your project. If you need to set process.env.NODE_ENV, you can set it in the Vite config instead.
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+vite v6.4.1 building for production...
+transforming...
+✓ 13503 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/manifest.webmanifest                            1.55 kB
+dist/index.html                                      3.16 kB │ gzip:   1.18 kB
+dist/assets/index-CQqwUu3X.css                       1.36 kB │ gzip:   0.66 kB
+dist/assets/charts-9YWwdbPr.js                       0.03 kB │ gzip:   0.05 kB │ map:     0.10 kB
+dist/assets/workbox-window.prod.es5-BIl4cyR9.js      5.76 kB │ gzip:   2.37 kB │ map:    13.64 kB
+dist/assets/redux-CY1YfQkv.js                       28.33 kB │ gzip:  10.94 kB │ map:   262.14 kB
+dist/assets/react-DSGHTHLq.js                      142.24 kB │ gzip:  45.61 kB │ map:   344.93 kB
+dist/assets/mui-BV9AQkJ1.js                        409.86 kB │ gzip: 123.58 kB │ map: 2,079.32 kB
+dist/assets/index-6C3s19rN.js                    1,121.92 kB │ gzip: 301.68 kB │ map: 4,195.76 kB
+
+(!) Some chunks are larger than 800 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1m 9s
+
+PWA v1.2.0
+mode      generateSW
+precache  20 entries (1681.38 KiB)
+files generated
+  dist/sw.js.map
+  dist/sw.js
+  dist/workbox-58bd4dca.js.map
+  dist/workbox-58bd4dca.js

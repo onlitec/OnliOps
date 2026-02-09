@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Search, Settings } from 'lucide-react'
 import { api } from '../services/api'
+import {
+    Box,
+    Typography,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    SelectChangeEvent,
+    Button,
+    CircularProgress
+} from '@mui/material'
+import { useAppDispatch, useAppSelector } from '../hooks/useApp'
+import { setCurrentClient, setCurrentProject, fetchClientProjects } from '../store/slices/projectSlice'
 
 interface VLAN {
     vlan_id: number
@@ -9,6 +22,9 @@ interface VLAN {
 }
 
 export default function VlanManager() {
+    const dispatch = useAppDispatch()
+    const { currentClient, currentProject, clients, projects } = useAppSelector((state) => state.project)
+
     const [vlans, setVlans] = useState<VLAN[]>([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
@@ -16,8 +32,25 @@ export default function VlanManager() {
     const [formData, setFormData] = useState({ vlan_id: '', name: '', description: '' })
 
     useEffect(() => {
-        fetchVlans()
-    }, [])
+        if (currentProject) {
+            fetchVlans()
+        } else {
+            setLoading(false)
+            setVlans([])
+        }
+    }, [currentProject])
+
+    const handleClientChange = (clientId: string) => {
+        const client = clients.find(c => c.id === clientId) || null
+        dispatch(setCurrentClient(client))
+        if (client) dispatch(fetchClientProjects(client.id))
+        dispatch(setCurrentProject(null))
+    }
+
+    const handleProjectChange = (projectId: string) => {
+        const project = projects.find(p => p.id === projectId) || null
+        dispatch(setCurrentProject(project))
+    }
 
     const fetchVlans = async () => {
         setLoading(true)
@@ -78,8 +111,36 @@ export default function VlanManager() {
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Gerenciamento de VLANs</h1>
-                    <p className="text-gray-600 mt-1">Configure as redes virtuais do sistema</p>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Gerenciamento de VLANs</h1>
+                    <Box display="flex" gap={2} alignItems="center">
+                        <FormControl size="small" sx={{ minWidth: 200 }}>
+                            <InputLabel>Cliente</InputLabel>
+                            <Select
+                                value={currentClient?.id || ''}
+                                label="Cliente"
+                                onChange={(e: SelectChangeEvent) => handleClientChange(e.target.value)}
+                            >
+                                {clients.map(c => (
+                                    <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        {currentClient && (
+                            <FormControl size="small" sx={{ minWidth: 200 }}>
+                                <InputLabel>Projeto</InputLabel>
+                                <Select
+                                    value={currentProject?.id || ''}
+                                    label="Projeto"
+                                    onChange={(e: SelectChangeEvent) => handleProjectChange(e.target.value)}
+                                >
+                                    {projects.map(p => (
+                                        <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        )}
+                    </Box>
                 </div>
                 <button
                     onClick={() => {
@@ -87,7 +148,11 @@ export default function VlanManager() {
                         setFormData({ vlan_id: '', name: '', description: '' })
                         setShowForm(true)
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    disabled={!currentProject}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${!currentProject
+                        ? 'bg-gray-300 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        }`}
                 >
                     <Plus size={20} />
                     Nova VLAN

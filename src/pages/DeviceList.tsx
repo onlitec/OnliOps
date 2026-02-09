@@ -21,7 +21,11 @@ import {
     Button,
     useTheme,
     CircularProgress,
-    Divider
+    Divider,
+    FormControl,
+    InputLabel,
+    Select,
+    SelectChangeEvent
 } from '@mui/material'
 import {
     Business as BusinessIcon,
@@ -246,238 +250,94 @@ export default function DeviceList({ categoryOverride }: DeviceListProps) {
         dispatch(setCurrentProject(project))
     }
 
-    // Hierarchy Selection View (only when accessed directly)
-    if (!categoryOverride) {
-        if (!currentClient) {
-            return (
-                <Box sx={{ p: 4 }}>
-                    <Box mb={6} textAlign="center">
-                        <Typography variant="h4" fontWeight={900} gutterBottom sx={{ letterSpacing: '-0.5px' }}>
-                            Inventário de Dispositivos
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            Selecione um cliente para visualizar seu inventário de dispositivos.
-                        </Typography>
-                    </Box>
+    const handleClientChange = (clientId: string) => {
+        const client = clients.find(c => c.id === clientId) || null
+        dispatch(setCurrentClient(client))
+        // fetchClientProjects is already handled in projectSlice or we can trigger it here
+        if (client) dispatch(fetchClientProjects(client.id))
+        dispatch(setCurrentProject(null))
+    }
 
-                    <Grid container spacing={2} justifyContent="center" sx={{ maxWidth: 1000, mx: 'auto' }}>
-                        {clients.map(client => (
-                            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={client.id}>
-                                <Card
-                                    sx={{
-                                        height: '100%',
-                                        border: '2px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 2,
-                                        transition: 'all 0.2s ease',
-                                        '&:hover': {
-                                            borderColor: 'primary.main',
-                                            transform: 'translateY(-2px)',
-                                            boxShadow: theme.shadows[4]
-                                        }
-                                    }}
-                                >
-                                    <CardActionArea
-                                        onClick={() => handleClientSelect(client)}
-                                        sx={{ height: '100%', p: 2 }}
-                                    >
-                                        <Box display="flex" alignItems="center" gap={2}>
-                                            <Box sx={{
-                                                width: 40,
-                                                height: 40,
-                                                bgcolor: 'rgba(230, 0, 18, 0.05)',
-                                                borderRadius: 1,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'primary.main',
-                                                border: '1px solid rgba(230, 0, 18, 0.1)'
-                                            }}>
-                                                <BusinessIcon fontSize="small" />
-                                            </Box>
-                                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                                                <Typography variant="subtitle2" fontWeight={700} noWrap>
-                                                    {client.name}
-                                                </Typography>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Selecionar Cliente
-                                                </Typography>
-                                            </Box>
-                                            <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                                        </Box>
-                                    </CardActionArea>
-                                </Card>
-                            </Grid>
-                        ))}
-                        {clients.length === 0 && (
-                            <Grid size={{ xs: 12 }}>
-                                <Box textAlign="center" py={8} bgcolor="rgba(0,0,0,0.02)" borderRadius={2} border="2px dashed" borderColor="divider">
-                                    <Typography color="text.secondary">Nenhum cliente disponível.</Typography>
-                                </Box>
-                            </Grid>
-                        )}
-                    </Grid>
-                </Box>
-            )
-        }
-
-        if (!currentProject) {
-            return (
-                <Box sx={{ p: 4 }}>
-                    <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
-                        <Box>
-                            <Typography variant="h4" fontWeight={900} gutterBottom sx={{ letterSpacing: '-0.5px' }}>
-                                Selecionar Projeto
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                                Cliente: <strong>{currentClient.name}</strong>
-                            </Typography>
-                        </Box>
-                        <Button
-                            variant="outlined"
-                            startIcon={<ArrowBackIcon />}
-                            onClick={() => dispatch(setCurrentClient(null))}
-                            sx={{ fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
-                        >
-                            Trocar Cliente
-                        </Button>
-                    </Box>
-
-                    <Grid container spacing={2} sx={{ maxWidth: 1000 }}>
-                        {projects.map(project => (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={project.id}>
-                                <Card
-                                    sx={{
-                                        height: '100%',
-                                        border: '2px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 2,
-                                        transition: 'all 0.2s ease',
-                                        '&:hover': {
-                                            borderColor: 'primary.main',
-                                            transform: 'translateY(-2px)',
-                                            boxShadow: theme.shadows[4]
-                                        }
-                                    }}
-                                >
-                                    <CardActionArea
-                                        onClick={() => handleProjectSelect(project)}
-                                        sx={{ height: '100%', p: 2 }}
-                                    >
-                                        <Box display="flex" alignItems="center" gap={2}>
-                                            <Box sx={{
-                                                width: 40,
-                                                height: 40,
-                                                bgcolor: 'primary.main',
-                                                borderRadius: 1,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'white'
-                                            }}>
-                                                <DashboardIcon fontSize="small" />
-                                            </Box>
-                                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                                                <Typography variant="subtitle2" fontWeight={700} noWrap>
-                                                    {project.name}
-                                                </Typography>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Abrir Inventário
-                                                </Typography>
-                                            </Box>
-                                            <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                                        </Box>
-                                    </CardActionArea>
-                                </Card>
-                            </Grid>
-                        ))}
-                        {projects.length === 0 && !loading && (
-                            <Grid size={{ xs: 12 }}>
-                                <Box textAlign="center" py={8} bgcolor="rgba(0,0,0,0.02)" borderRadius={2} border="2px dashed" borderColor="divider">
-                                    <Typography color="text.secondary">Este cliente não possui projetos cadastrados.</Typography>
-                                </Box>
-                            </Grid>
-                        )}
-                        {loading && (
-                            <Grid size={{ xs: 12 }}>
-                                <Box textAlign="center" py={8}>
-                                    <CircularProgress />
-                                </Box>
-                            </Grid>
-                        )}
-                    </Grid>
-                </Box>
-            )
-        }
+    const handleProjectChange = (projectId: string) => {
+        const project = projects.find(p => p.id === projectId) || null
+        dispatch(setCurrentProject(project))
     }
 
     return (
         <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <Box display="flex" alignItems="center" gap={1.5} mb={0.5}>
-                        {!categoryOverride && (
-                            <Box sx={{ width: 32, height: 32, bgcolor: 'primary.main', borderRadius: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <DashboardIcon sx={{ color: 'white', fontSize: 18 }} />
-                            </Box>
-                        )}
-                        <h1 className="text-3xl font-bold text-gray-900">{getTitle()}</h1>
-                    </Box>
-                    <p className="text-gray-600">
-                        {categoryOverride
-                            ? 'Gerencie os dispositivos desta categoria'
-                            : `Projeto: ${currentProject?.name} (${currentClient?.name})`}
-                    </p>
-                </div>
-                <div className="flex gap-3">
-                    {!categoryOverride && (
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            startIcon={<ArrowBackIcon />}
-                            onClick={() => dispatch(setCurrentProject(null))}
-                            sx={{ fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
+            {!categoryOverride && (
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">{getTitle()}</h1>
+                        <Box display="flex" gap={2} alignItems="center">
+                            <FormControl size="small" sx={{ minWidth: 200 }}>
+                                <InputLabel>Cliente</InputLabel>
+                                <Select
+                                    value={currentClient?.id || ''}
+                                    label="Cliente"
+                                    onChange={(e: SelectChangeEvent) => handleClientChange(e.target.value)}
+                                >
+                                    {clients.map(c => (
+                                        <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            {currentClient && (
+                                <FormControl size="small" sx={{ minWidth: 200 }}>
+                                    <InputLabel>Projeto</InputLabel>
+                                    <Select
+                                        value={currentProject?.id || ''}
+                                        label="Projeto"
+                                        onChange={(e: SelectChangeEvent) => handleProjectChange(e.target.value)}
+                                    >
+                                        {projects.map(p => (
+                                            <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            )}
+                        </Box>
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={(e) => setImportMenuAnchor(e.currentTarget)}
+                            className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
                         >
-                            Trocar Projeto
-                        </Button>
-                    )}
-                    <button
-                        onClick={(e) => setImportMenuAnchor(e.currentTarget)}
-                        className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                        <Upload size={20} />
-                        Importar
-                        <ChevronDown size={16} />
-                    </button>
-                    <Menu
-                        anchorEl={importMenuAnchor}
-                        open={Boolean(importMenuAnchor)}
-                        onClose={() => setImportMenuAnchor(null)}
-                    >
-                        <MenuItem onClick={() => { setImportMenuAnchor(null); setShowSmartImport(true); }}>
-                            <ListItemIcon><Sparkles size={18} className="text-purple-600" /></ListItemIcon>
-                            <ListItemText
-                                primary="Importação Inteligente"
-                                secondary="Com categorização via IA"
-                            />
-                        </MenuItem>
-                        <MenuItem onClick={() => { setImportMenuAnchor(null); setShowImport(true); }}>
-                            <ListItemIcon><Upload size={18} /></ListItemIcon>
-                            <ListItemText
-                                primary="Importação Básica"
-                                secondary="Planilha SADP tradicional"
-                            />
-                        </MenuItem>
-                    </Menu>
-                    <button
-                        onClick={handleAddDevice}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        <Plus size={20} />
-                        Adicionar Dispositivo
-                    </button>
+                            <Upload size={20} />
+                            Importar
+                            <ChevronDown size={16} />
+                        </button>
+                        <Menu
+                            anchorEl={importMenuAnchor}
+                            open={Boolean(importMenuAnchor)}
+                            onClose={() => setImportMenuAnchor(null)}
+                        >
+                            <MenuItem onClick={() => { setImportMenuAnchor(null); setShowSmartImport(true); }}>
+                                <ListItemIcon><Sparkles size={18} className="text-purple-600" /></ListItemIcon>
+                                <ListItemText
+                                    primary="Importação Inteligente"
+                                    secondary="Com categorização via IA"
+                                />
+                            </MenuItem>
+                            <MenuItem onClick={() => { setImportMenuAnchor(null); setShowImport(true); }}>
+                                <ListItemIcon><Upload size={18} /></ListItemIcon>
+                                <ListItemText
+                                    primary="Importação Básica"
+                                    secondary="Planilha SADP tradicional"
+                                />
+                            </MenuItem>
+                        </Menu>
+                        <button
+                            onClick={handleAddDevice}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            <Plus size={20} />
+                            Adicionar Dispositivo
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="bg-white rounded-lg shadow-sm p-4 space-y-4">
                 <div className="flex gap-4 flex-wrap">

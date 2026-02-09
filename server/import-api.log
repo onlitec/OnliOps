@@ -1,9 +1,36 @@
 nohup: ignoring input
+[dotenv@17.2.3] injecting env (18) from ../.env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
 [Branding] Directory exists: /opt/calabasas/server/uploads/branding
 [Branding] Files found: none
 [DB] Checking database schema...
 Import API server running on http://localhost:3001
 AI endpoints available at http://localhost:3001/api/ai
+AI Streaming available at http://localhost:3001/api/ai/stream
+Prompts API available at http://localhost:3001/api/prompts
 [DB] Tables already exist. Ensuring all tables are up to date...
-[DB] Error initializing database: must be owner of table users
-[DB] Database initialization failed - some features may not work
+[DB] Schema verified.
+[DB] Running migrations for new columns...
+[DB] Migration 'add_phone_to_users' applied successfully
+[DB] Migration 'add_password_hash_to_users' applied successfully
+[DB] Migration 'add_avatar_url_to_users' applied successfully
+[DB] Migration 'add_telegram_chat_id_to_users' applied successfully
+[DB] Migration 'add_telegram_verified_to_users' applied successfully
+[DB] Migration 'create_password_request_logs' applied successfully
+[DB] Migration 'create_idx_password_request_logs_user' applied successfully
+[DB] Migration 'create_idx_password_request_logs_device' applied successfully
+[DB] Migration 'add_serial_number_to_network_devices' applied successfully
+[DB] Migration 'add_firmware_version_to_network_devices' applied successfully
+[DB] Migration 'add_location_to_network_devices' applied successfully
+[DB] Migration 'add_notes_to_network_devices' applied successfully
+[DB] Migration 'add_unique_ip_project_to_network_devices' applied successfully
+[DB] Migration 'add_tag_to_network_devices' applied successfully
+[DB] Migration 'add_idx_network_devices_tag' applied successfully
+[DB] Migration 'add_category_id_to_network_devices' applied successfully
+[DB] Migration 'allow_null_vlan_id' applied successfully
+[DB] Migration 'enforce_project_client_id_not_null' applied successfully
+[DB] Migration 'enforce_device_project_id_not_null' applied successfully
+[DB] Migration 'enforce_vlan_project_id_not_null' applied successfully
+[DB] Migration 'enforce_alert_project_id_not_null' applied successfully
+[DB] Migration 'enforce_integration_project_id_not_null' applied successfully
+[DB] Total tables in database: 20
+[DB] Database ready for connections

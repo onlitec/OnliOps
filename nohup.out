@@ -1,0 +1,286 @@
+
+> onliops-platform@0.0.0 dev
+> vite --port 80 --host
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+5:50:06 AM [vite] (client) Re-optimizing dependencies because lockfile has changed
+error when starting dev server:
+Error: listen EACCES: permission denied 0.0.0.0:80
+    at Server.setupListenHandle [as _listen2] (node:net:1886:21)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at httpServer.listen (file:///opt/calabasas/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:38758:14)
+
+> onliops-platform@0.0.0 dev
+> vite --port 80 --host
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+error when starting dev server:
+Error: listen EACCES: permission denied 0.0.0.0:80
+    at Server.setupListenHandle [as _listen2] (node:net:1886:21)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at httpServer.listen (file:///opt/calabasas/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:38758:14)
+
+> onliops-platform@0.0.0 dev
+> vite --port 80 --host
+
+error when starting dev server:
+Error: listen EACCES: permission denied 0.0.0.0:80
+    at Server.setupListenHandle [as _listen2] (node:net:1886:21)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at httpServer.listen (file:///opt/calabasas/node_modules/vite/dist/node/chunks/dep-D4NMHUTW.js:38758:14)
+
+> onliops-platform@0.0.0 dev
+> vite --port 80 --host
+
+
+  VITE v6.4.1  ready in 303 ms
+
+  ➜  Local:   http://localhost:80/
+  ➜  Network: http://172.20.120.41:80/
+  ➜  Network: http://172.18.0.1:80/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-start-line" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                              ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-start-column" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                              ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-end-line" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                               ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-end-column" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                             ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-file-path" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                            ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-static-props" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-start-line" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-start-column" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-end-line" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-end-column" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-file-path" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:31 PM [vite] (client) warning: Duplicate "trae-inspector-static-props" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:10:40 PM [vite] (client) ✨ new dependencies optimized: workbox-window
+1:10:40 PM [vite] (client) ✨ optimized dependencies changed. reloading
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-start-line" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                              ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-start-column" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                              ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-end-line" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                               ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-end-column" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                             ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-file-path" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                            ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-static-props" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-start-line" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-start-column" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-end-line" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-end-column" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-file-path" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx
+1:35:40 PM [vite] (client) warning: Duplicate "trae-inspector-static-props" attribute in JSX element
+263|                                  [{line.timestamp.toLocaleTimeString()}]
+264|                              </Typography>
+265|                              <span trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D" trae-inspector-start-line="246" trae-inspector-start-column="28" trae-inspector-end-line="246" trae-inspector-end-column="55" trae-inspector-file-path="src/components/inventory/AITerminal.tsx" trae-inspector-static-props="%7B%22cwd%22%3A%22%2Fopt%2Fcalabasas%22%7D">{line.content}</span>
+   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ^
+266|                          </Box>
+267|            )}
+
+  Plugin: vite:esbuild
+  File: /opt/calabasas/src/components/inventory/AITerminal.tsx

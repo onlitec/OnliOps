@@ -1,9 +1,25 @@
-import { Typography, Box, Card, CardContent, Select, MenuItem, CircularProgress } from '@mui/material'
+import {
+    Typography,
+    Box,
+    Card,
+    CardContent,
+    Select,
+    MenuItem,
+    CircularProgress,
+    FormControl,
+    InputLabel,
+    SelectChangeEvent
+} from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import { NetworkDevice, DeviceConnection } from '../lib/supabase'
 import { api } from '../services/api'
+import { useAppDispatch, useAppSelector } from '../hooks/useApp'
+import { setCurrentClient, setCurrentProject, fetchClientProjects } from '../store/slices/projectSlice'
 
 export default function Topology() {
+  const dispatch = useAppDispatch()
+  const { currentClient, currentProject, clients, projects } = useAppSelector((state) => state.project)
+
   const [devices, setDevices] = useState<NetworkDevice[]>([])
   const [connections, setConnections] = useState<DeviceConnection[]>([])
   const [vlanFilter, setVlanFilter] = useState<number | 'all'>('all')
@@ -11,8 +27,26 @@ export default function Topology() {
   const svgRef = useRef<SVGSVGElement | null>(null)
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (currentProject) {
+      loadData()
+    } else {
+        setLoading(false)
+        setDevices([])
+        setConnections([])
+    }
+  }, [currentProject])
+
+  const handleClientChange = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId) || null
+    dispatch(setCurrentClient(client))
+    if (client) dispatch(fetchClientProjects(client.id))
+    dispatch(setCurrentProject(null))
+  }
+
+  const handleProjectChange = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId) || null
+    dispatch(setCurrentProject(project))
+  }
 
   const loadData = async () => {
     setLoading(true)

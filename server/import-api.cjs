@@ -14,6 +14,7 @@ const BCRYPT_SALT_ROUNDS = 10
 
 // AI Integration
 const aiRoutes = require('./routes/ai.cjs')
+const integrationsRoutes = require('./routes/integrations.cjs')
 
 // Database initialization
 const { initializeDatabase } = require('./utils/db-init.cjs')
@@ -708,13 +709,67 @@ app.delete('/api/vlans/:id', async (req, res) => {
 // Endpoint para listar dispositivos
 app.get('/api/network_devices', async (req, res) => {
     try {
-        const { rows } = await pool.query('SELECT * FROM network_devices WHERE project_id = $1 ORDER BY created_at DESC', [req.projectId])
-        res.json(rows)
+        const { rows } = await pool.query(`
+            SELECT nd.*, v.name as vlan_name, v.vlan_id as vlan_number, dc.name as category_name
+            FROM network_devices nd
+            LEFT JOIN vlans v ON nd.vlan_id = v.id
+            LEFT JOIN device_categories dc ON nd.category_id = dc.id
+            WHERE nd.project_id = $1
+            ORDER BY nd.created_at DESC
+        `, [req.projectId]);
+        res.json(rows);
     } catch (error) {
-        console.error('Error fetching devices:', error)
-        res.status(500).json({ error: error.message })
+        console.error('Error fetching devices:', error);
+        res.status(500).json({ error: error.message });
     }
-})
+});
+
+// === ALERTS ENDPOINTS ===
+
+// Get all alerts for project
+app.get('/api/alerts', async (req, res) => {
+    const { severity, resolved } = req.query;
+    try {
+        let sql = `
+            SELECT a.*, nd.model as device_model, nd.ip_address as device_ip
+            FROM alerts a
+            LEFT JOIN network_devices nd ON a.device_id = nd.id
+            WHERE a.project_id = $1
+        `;
+        const params = [req.projectId];
+
+        if (severity) {
+            params.push(severity);
+            sql += ` AND a.severity = $${params.length}`;
+        }
+        if (resolved !== undefined) {
+            params.push(resolved === 'true');
+            sql += ` AND a.is_resolved = $${params.length}`;
+        }
+
+        sql += ` ORDER BY a.created_at DESC`;
+
+        const { rows } = await pool.query(sql, params);
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Resolve alert
+app.put('/api/alerts/:id/resolve', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { rows } = await pool.query(
+            'UPDATE alerts SET is_resolved = true, resolved_at = NOW() WHERE id = $1 AND project_id = $2 RETURNING *',
+            [id, req.projectId]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: 'Alert not found' });
+        res.json(rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Endpoint para criar um dispositivo
 app.post('/api/network_devices', async (req, res) => {
@@ -1673,16 +1728,15 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' })
 })
 
-// Share database pool with route modules (AI, integrations, etc.)
+// === AI INTEGRATION ===
+// Share database pool with AI routes
 app.locals.pool = pool
 
-// === INTEGRATIONS ===
-const integrationsRoutes = require('./routes/integrations.cjs')(pool)
-app.use('/api/integrations', integrationsRoutes)
-
-// === AI INTEGRATION ===
 // Mount AI routes
 app.use('/api/ai', aiRoutes)
+
+// Mount Integrations routes
+app.use('/api/integrations', integrationsRoutes(pool))
 
 // Mount Prompts routes
 const promptsRoutes = require('./routes/prompts.cjs')

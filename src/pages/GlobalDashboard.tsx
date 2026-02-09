@@ -40,6 +40,7 @@ interface Metrics {
     totalClients: number
     totalProjects: number
     totalDevices: number
+    totalIntegrations?: number
     activeAlerts: number
     uptime: string
     lastUpdate: string
@@ -91,7 +92,7 @@ export default function GlobalDashboard() {
         }
         dispatch(setCurrentProject(projectForRedux))
         dispatch(setCurrentClient({ id: project.client.id, name: project.client.name }))
-        navigate(`/dashboard`)
+        navigate(`/client/${project.client.id}/project/${project.id}`)
     }
 
     // Process clients - start with all clients, then merge project data

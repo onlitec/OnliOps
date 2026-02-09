@@ -244,6 +244,28 @@ export const api = {
         if (!response.ok) throw new Error('Failed to delete device')
     },
 
+    // Alerts
+    getAlerts: async (filters?: { severity?: string; resolved?: boolean }): Promise<any[]> => {
+        let url = `${API_BASE}/alerts`
+        const queryParams = []
+        if (filters?.severity) queryParams.push(`severity=${filters.severity}`)
+        if (filters?.resolved !== undefined) queryParams.push(`resolved=${filters.resolved}`)
+        if (queryParams.length > 0) url += `?${queryParams.join('&')}`
+        
+        const response = await fetch(url, { headers: getAuthHeaders() })
+        if (!response.ok) throw new Error('Failed to fetch alerts')
+        return response.json()
+    },
+
+    resolveAlert: async (id: string): Promise<any> => {
+        const response = await fetch(`${API_BASE}/alerts/${id}/resolve`, {
+            method: 'PUT',
+            headers: getAuthHeaders()
+        })
+        if (!response.ok) throw new Error('Failed to resolve alert')
+        return response.json()
+    },
+
     // Topology
     getConnections: async (): Promise<any[]> => {
         const response = await fetch(`${API_BASE}/topology/connections`, { headers: getAuthHeaders() })

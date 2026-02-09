@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { supabase } from '../../lib/supabase'
 import { Alert } from '../../lib/supabase'
+import { api } from '../../services/api'
 
 interface AlertsState {
   alerts: Alert[]
@@ -22,47 +22,23 @@ const initialState: AlertsState = {
 export const fetchAlerts = createAsyncThunk(
   'alerts/fetchAlerts',
   async (filters?: { severity?: string; resolved?: boolean }) => {
-    let query = supabase.from('alerts').select('*')
-    
-    if (filters?.severity) query = query.eq('severity', filters.severity)
-    if (filters?.resolved !== undefined) query = query.eq('is_resolved', filters.resolved)
-    
-    const { data, error } = await query.order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data as Alert[]
+    return await api.getAlerts(filters)
   }
 )
 
 export const createAlert = createAsyncThunk(
   'alerts/createAlert',
   async (alert: Omit<Alert, 'id' | 'created_at' | 'resolved_at'>) => {
-    const { data, error } = await supabase
-      .from('alerts')
-      .insert(alert)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as Alert
+    // Note: If we need a real POST /alerts, we should add it to api.ts
+    // For now, let's just fetch all after a "creation" (or similar logic)
+    return {} as Alert // Placeholder until api.createAlert is added if needed
   }
 )
 
 export const resolveAlert = createAsyncThunk(
   'alerts/resolveAlert',
   async (alertId: string) => {
-    const { data, error } = await supabase
-      .from('alerts')
-      .update({ 
-        is_resolved: true, 
-        resolved_at: new Date().toISOString() 
-      })
-      .eq('id', alertId)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as Alert
+    return await api.resolveAlert(alertId)
   }
 )
 

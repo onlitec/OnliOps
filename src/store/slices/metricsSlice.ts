@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { supabase } from '../../lib/supabase'
+import { api } from '../../services/api'
 
 interface NetworkStatistics {
   total_devices: number
@@ -30,58 +30,33 @@ const initialState: MetricsState = {
 export const fetchNetworkStatistics = createAsyncThunk(
   'metrics/fetchNetworkStatistics',
   async () => {
-    const { data, error } = await supabase
-      .from('network_statistics')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(1)
-      .single()
-    
-    if (error) throw error
-    return data as NetworkStatistics
+    const metrics = await api.getPlatformMetrics()
+    return {
+      total_devices: metrics.totalDevices || 0,
+      active_devices: metrics.totalDevices || 0, // Placeholder
+      total_vlans: 0,
+      total_alerts: metrics.activeAlerts || 0,
+      critical_alerts: metrics.activeAlerts || 0,
+      network_in: 0,
+      network_out: 0,
+      timestamp: metrics.lastUpdate || new Date().toISOString(),
+    } as NetworkStatistics
   }
 )
 
 export const fetchDeviceCounts = createAsyncThunk(
   'metrics/fetchDeviceCounts',
   async () => {
-    // Get total devices count
-    const { count: totalDevices } = await supabase
-      .from('network_devices')
-      .select('*', { count: 'exact', head: true })
-    
-    // Get active devices count
-    const { count: activeDevices } = await supabase
-      .from('network_devices')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active')
-    
-    // Get VLANs count
-    const { count: totalVLANs } = await supabase
-      .from('vlans')
-      .select('*', { count: 'exact', head: true })
-    
-    // Get alerts count
-    const { count: totalAlerts } = await supabase
-      .from('alerts')
-      .select('*', { count: 'exact', head: true })
-    
-    // Get critical alerts count
-    const { count: criticalAlerts } = await supabase
-      .from('alerts')
-      .select('*', { count: 'exact', head: true })
-      .eq('severity', 'critical')
-      .eq('is_resolved', false)
-    
+    const metrics = await api.getPlatformMetrics()
     return {
-      total_devices: totalDevices || 0,
-      active_devices: activeDevices || 0,
-      total_vlans: totalVLANs || 0,
-      total_alerts: totalAlerts || 0,
-      critical_alerts: criticalAlerts || 0,
+      total_devices: metrics.totalDevices || 0,
+      active_devices: metrics.totalDevices || 0,
+      total_vlans: 0,
+      total_alerts: metrics.activeAlerts || 0,
+      critical_alerts: metrics.activeAlerts || 0,
       network_in: 0,
       network_out: 0,
-      timestamp: new Date().toISOString(),
+      timestamp: metrics.lastUpdate || new Date().toISOString(),
     } as NetworkStatistics
   }
 )

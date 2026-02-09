@@ -34,7 +34,6 @@ import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "@/store/slices/authSlice";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { BrandingProvider } from "@/context/BrandingContext";
-import Inventory from "@/pages/Inventory";
 
 function AppInner() {
   const dispatch = useDispatch<AppDispatch>();
@@ -59,7 +58,6 @@ function AppInner() {
         <Route path="clients" element={<ClientList />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="devices/:category" element={<DeviceList />} />
-        <Route path="inventory" element={<Inventory />} />
         <Route path="vlans" element={<VlanManager />} />
         <Route path="topology" element={<Topology />} />
         <Route path="profile" element={<Profile />} />
@@ -80,6 +78,7 @@ function AppInner() {
         <Route path="admin/projects" element={<Navigate to="/settings/projects" replace />} />
         <Route path="devices" element={<Navigate to="/devices/all" replace />} />
         <Route path="alerts" element={<Navigate to="/dashboard" replace />} />
+        <Route path="inventory" element={<Navigate to="/dashboard" replace />} />
         <Route path="simulations/*" element={<Navigate to="/dashboard" replace />} />
       </Route>
 

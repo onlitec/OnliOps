@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { supabase } from '../../lib/supabase'
 import { VLAN } from '../../lib/supabase'
+import { api } from '../../services/api'
 
 interface VLANsState {
   vlans: VLAN[]
@@ -16,103 +16,34 @@ const initialState: VLANsState = {
   error: null,
 }
 
-// Dados mockados para desenvolvimento local
-const MOCK_VLANS: VLAN[] = [
-  {
-    vlan_id: 10,
-    name: 'VLAN Gerenciamento',
-    description: 'VLAN para gerenciamento de switches e routers',
-    subnet: '192.168.10.0/24',
-    gateway: '192.168.10.1',
-    created_at: new Date(Date.now() - 500 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    vlan_id: 20,
-    name: 'VLAN Servidores',
-    description: 'VLAN para servidores de aplicação e banco de dados',
-    subnet: '192.168.20.0/24',
-    gateway: '192.168.20.1',
-    created_at: new Date(Date.now() - 450 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    vlan_id: 30,
-    name: 'VLAN Usuários',
-    description: 'VLAN para estações de trabalho',
-    subnet: '192.168.30.0/23',
-    gateway: '192.168.30.1',
-    created_at: new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    vlan_id: 100,
-    name: 'VLAN Câmeras e Segurança',
-    description: 'VLAN isolada para câmeras IP, NVRs e sistema de segurança',
-    subnet: '192.168.100.0/24',
-    gateway: '192.168.100.1',
-    created_at: new Date(Date.now() - 300 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    vlan_id: 200,
-    name: 'VLAN Convidados',
-    description: 'VLAN para acesso de convidados (isolada)',
-    subnet: '192.168.200.0/24',
-    gateway: '192.168.200.1',
-    created_at: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date().toISOString()
-  }
-]
+// Async thunks
 
 // Async thunks
 export const fetchVLANs = createAsyncThunk(
   'vlans/fetchVLANs',
   async () => {
-    // Retornar VLANs mockadas
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return [...MOCK_VLANS]
+    return await api.getVlans()
   }
 )
 
 export const createVLAN = createAsyncThunk(
   'vlans/createVLAN',
   async (vlan: Omit<VLAN, 'created_at' | 'updated_at'>) => {
-    const { data, error } = await supabase
-      .from('vlans')
-      .insert(vlan)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as VLAN
+    return await api.createVlan(vlan)
   }
 )
 
 export const updateVLAN = createAsyncThunk(
   'vlans/updateVLAN',
   async ({ vlanId, updates }: { vlanId: number; updates: Partial<VLAN> }) => {
-    const { data, error } = await supabase
-      .from('vlans')
-      .update(updates)
-      .eq('vlan_id', vlanId)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as VLAN
+    return await api.updateVlan(vlanId, updates)
   }
 )
 
 export const deleteVLAN = createAsyncThunk(
   'vlans/deleteVLAN',
   async (vlanId: number) => {
-    const { error } = await supabase
-      .from('vlans')
-      .delete()
-      .eq('vlan_id', vlanId)
-    
-    if (error) throw error
+    await api.deleteVlan(vlanId)
     return vlanId
   }
 )

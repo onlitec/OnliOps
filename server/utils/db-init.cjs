@@ -345,6 +345,27 @@ async function runMigrations(pool) {
         {
             name: 'allow_null_vlan_id',
             sql: `ALTER TABLE network_devices ALTER COLUMN vlan_id DROP NOT NULL;`
+        },
+        // Strict hierarchy enforcement
+        {
+            name: 'enforce_project_client_id_not_null',
+            sql: `ALTER TABLE projects ALTER COLUMN client_id SET NOT NULL;`
+        },
+        {
+            name: 'enforce_device_project_id_not_null',
+            sql: `ALTER TABLE network_devices ALTER COLUMN project_id SET NOT NULL;`
+        },
+        {
+            name: 'enforce_vlan_project_id_not_null',
+            sql: `ALTER TABLE vlans ALTER COLUMN project_id SET NOT NULL;`
+        },
+        {
+            name: 'enforce_alert_project_id_not_null',
+            sql: `ALTER TABLE alerts ALTER COLUMN project_id SET NOT NULL;`
+        },
+        {
+            name: 'enforce_integration_project_id_not_null',
+            sql: `ALTER TABLE project_integrations ALTER COLUMN project_id SET NOT NULL;`
         }
     ];
 

@@ -61,10 +61,9 @@ npm run dev
 - **3D Rendering:** Three.js 0.181.2
 
 ### Backend & Database
-- **API principal:** Express.js (Node 20) com conexão direta ao PostgreSQL
-- **BaaS opcional:** Supabase (PostgreSQL + Auth) — hoje usado principalmente como referência de schema e migrações
+- **BaaS:** Supabase (PostgreSQL + Auth)
 - **Database:** PostgreSQL 14+
-- **Auth em produção local:** Endpoints próprios em `server/import-api.cjs` (login/registro + bcrypt), com Supabase Auth reservado para cenários futuros/alternativos
+- **Auth:** Supabase Auth (Email/OAuth)
 
 ### DevOps
 - **Hosting:** Vercel / Nginx (local)

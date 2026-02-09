@@ -46,7 +46,7 @@ export default function ClientList() {
 
     const handleSelectProject = (project: any) => {
         dispatch(setCurrentProject(project))
-        navigate('/dashboard')
+        navigate(`/client/${project.client_id}/project/${project.id}`)
     }
 
     const createClient = async () => {
