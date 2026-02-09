@@ -404,30 +404,7 @@ app.delete('/api/projects/:id', async (req, res) => {
     }
 });
 
-// === PLATFORM METRICS ENDPOINTS ===
 
-// Get platform-wide metrics
-app.get('/api/platform/metrics', async (req, res) => {
-    try {
-        const [clients, projects, devices, alerts] = await Promise.all([
-            pool.query('SELECT COUNT(*) FROM clients'),
-            pool.query('SELECT COUNT(*) FROM projects'),
-            pool.query('SELECT COUNT(*) FROM network_devices'),
-            pool.query('SELECT COUNT(*) FROM alerts WHERE is_resolved = $1', [false])
-        ]);
-
-        res.json({
-            totalClients: parseInt(clients.rows[0].count),
-            totalProjects: parseInt(projects.rows[0].count),
-            totalDevices: parseInt(devices.rows[0].count),
-            activeAlerts: parseInt(alerts.rows[0].count),
-            uptime: "99.8%",
-            lastUpdate: new Date().toISOString()
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // Get projects summary for dashboard
 app.get('/api/platform/projects/summary', async (req, res) => {
@@ -534,22 +511,22 @@ app.delete('/api/users/:userId/permissions/:permissionId', async (req, res) => {
     }
 });
 
-// === PLATFORM METRICS ENDPOINTS ===
-
 // Get platform-wide metrics
 app.get('/api/platform/metrics', async (req, res) => {
     try {
-        const [clients, projects, devices, alerts] = await Promise.all([
+        const [clients, projects, devices, alerts, integrations] = await Promise.all([
             pool.query('SELECT COUNT(*) FROM clients'),
             pool.query('SELECT COUNT(*) FROM projects'),
             pool.query('SELECT COUNT(*) FROM network_devices'),
-            pool.query('SELECT COUNT(*) FROM alerts WHERE status = $1', ['active'])
+            pool.query('SELECT COUNT(*) FROM alerts WHERE status = $1', ['active']),
+            pool.query('SELECT COUNT(*) FROM project_integrations')
         ]);
 
         res.json({
             totalClients: parseInt(clients.rows[0].count),
             totalProjects: parseInt(projects.rows[0].count),
             totalDevices: parseInt(devices.rows[0].count),
+            totalIntegrations: parseInt(integrations.rows[0].count),
             activeAlerts: parseInt(alerts.rows[0].count),
             uptime: "99.8%", // TODO: Calculate real uptime
             lastUpdate: new Date().toISOString()
@@ -558,6 +535,7 @@ app.get('/api/platform/metrics', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 // Endpoint para listar VLANs
 app.get('/api/vlans', async (req, res) => {
@@ -1695,10 +1673,14 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' })
 })
 
-// === AI INTEGRATION ===
-// Share database pool with AI routes
+// Share database pool with route modules (AI, integrations, etc.)
 app.locals.pool = pool
 
+// === INTEGRATIONS ===
+const integrationsRoutes = require('./routes/integrations.cjs')(pool)
+app.use('/api/integrations', integrationsRoutes)
+
+// === AI INTEGRATION ===
 // Mount AI routes
 app.use('/api/ai', aiRoutes)
 
