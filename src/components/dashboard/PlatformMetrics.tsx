@@ -1,12 +1,13 @@
 import { Card, CardContent, Typography, Box, alpha, useTheme } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import { Users, Folder, HardDrive, AlertTriangle, Clock, ChevronRight } from 'lucide-react'
+import { Users, Folder, HardDrive, AlertTriangle, ChevronRight, Layers } from 'lucide-react'
 
 interface PlatformMetricsProps {
     data: {
         totalClients: number
         totalProjects: number
         totalDevices: number
+        totalIntegrations?: number
         activeAlerts: number
         uptime: string
     }
@@ -32,6 +33,13 @@ export default function PlatformMetrics({ data }: PlatformMetricsProps) {
             link: '/settings/projects',
         },
         {
+            label: 'Integrações',
+            value: data.totalIntegrations || 0,
+            icon: Layers,
+            color: '#6366f1',
+            link: '/settings/integrations',
+        },
+        {
             label: 'Dispositivos',
             value: data.totalDevices,
             icon: HardDrive,
@@ -44,14 +52,7 @@ export default function PlatformMetrics({ data }: PlatformMetricsProps) {
             icon: AlertTriangle,
             color: data.activeAlerts > 0 ? '#ef4444' : '#6b7280',
             link: '/dashboard',
-        },
-        {
-            label: 'Uptime',
-            value: data.uptime,
-            icon: Clock,
-            color: '#06b6d4',
-            link: null, // No link for uptime
-        },
+        }
     ]
 
     return (

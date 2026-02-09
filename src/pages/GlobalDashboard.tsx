@@ -174,7 +174,10 @@ export default function GlobalDashboard() {
             {/* Platform Metrics */}
             {metrics && (
                 <Box sx={{ mb: 3 }}>
-                    <PlatformMetrics data={metrics} />
+                    <PlatformMetrics data={{
+                        ...metrics,
+                        totalIntegrations: metrics.totalIntegrations
+                    }} />
                 </Box>
             )}
 
@@ -206,7 +209,7 @@ export default function GlobalDashboard() {
                                 <ClientDetailedCard
                                     client={client}
                                     selected={selectedClientId === client.id}
-                                    onClick={() => setSelectedClientId(selectedClientId === client.id ? null : client.id)}
+                                    onClick={() => navigate(`/client/${client.id}`)}
                                 />
                             </Grid>
                         ))}

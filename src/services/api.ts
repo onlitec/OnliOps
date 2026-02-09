@@ -486,5 +486,49 @@ export const api = {
             throw new Error(error.error || `Failed to delete ${type}`)
         }
         return response.json()
+    },
+
+    // === INTEGRATIONS ===
+    getIntegrationConfig: async (projectId: string, provider: string): Promise<any> => {
+        const response = await fetch(`${API_BASE}/integrations/${projectId}/${provider}`)
+        if (!response.ok) throw new Error('Failed to fetch integration config')
+        return response.json()
+    },
+
+    saveIntegrationConfig: async (projectId: string, provider: string, config: any): Promise<any> => {
+        const response = await fetch(`${API_BASE}/integrations/${projectId}/${provider}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        })
+        if (!response.ok) throw new Error('Failed to save integration config')
+        return response.json()
+    },
+
+    getAllIntegrations: async (): Promise<any[]> => {
+        const response = await fetch(`${API_BASE}/integrations/all`)
+        if (!response.ok) throw new Error('Failed to fetch all integrations')
+        return response.json()
+    },
+
+    testIntegration: async (projectId: string, provider: string, config: any): Promise<any> => {
+        const response = await fetch(`${API_BASE}/integrations/${projectId}/${provider}/test`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        })
+        if (!response.ok) throw new Error('Failed to test integration')
+        return response.json()
+    },
+
+    syncIntegration: async (projectId: string, provider: string): Promise<any> => {
+        const response = await fetch(`${API_BASE}/integrations/${projectId}/${provider}/sync`, {
+            method: 'POST'
+        })
+        if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to sync integration')
+        }
+        return response.json()
     }
 }

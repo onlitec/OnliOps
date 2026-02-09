@@ -27,6 +27,19 @@ CREATE TABLE IF NOT EXISTS projects (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Tabela de Integrações de Projetos
+CREATE TABLE IF NOT EXISTS project_integrations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    provider VARCHAR(50) NOT NULL,
+    config JSONB NOT NULL,
+    last_sync TIMESTAMP WITH TIME ZONE,
+    sync_status VARCHAR(50) DEFAULT 'idle',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(project_id, provider)
+);
+
 -- Tabela de Roles
 CREATE TABLE IF NOT EXISTS roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

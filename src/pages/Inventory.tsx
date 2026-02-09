@@ -17,6 +17,10 @@ const Inventory: React.FC = () => {
     const [showDetails, setShowDetails] = useState(false)
     const [editingDevice, setEditingDevice] = useState<NetworkDevice | null>(null)
     const [showImport, setShowImport] = useState(false)
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({
+        key: 'ip_address',
+        direction: 'asc'
+    })
 
     // Filters
     const [filterType, setFilterType] = useState<string>('all')
@@ -29,7 +33,7 @@ const Inventory: React.FC = () => {
 
     useEffect(() => {
         applyFilters()
-    }, [devices, searchTerm, filterType, filterManufacturer, filterLocation])
+    }, [devices, searchTerm, filterType, filterManufacturer, filterLocation, sortConfig])
 
     const fetchDevices = async () => {
         setLoading(true)
@@ -75,7 +79,33 @@ const Inventory: React.FC = () => {
             filtered = filtered.filter(device => device.location === filterLocation)
         }
 
+        // Sorting
+        if (sortConfig.key && sortConfig.direction) {
+            filtered.sort((a: any, b: any) => {
+                const aValue = a[sortConfig.key] || ''
+                const bValue = b[sortConfig.key] || ''
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1
+                }
+                return 0
+            })
+        }
+
         setFilteredDevices(filtered)
+    }
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' | null = 'asc'
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc'
+        } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = null
+        }
+        setSortConfig({ key, direction })
     }
 
     const handleAddDevice = () => {
@@ -261,6 +291,8 @@ const Inventory: React.FC = () => {
                 onView={handleViewDevice}
                 onEdit={handleEditDevice}
                 onRefresh={fetchDevices}
+                sortConfig={sortConfig}
+                onSort={handleSort}
             />
 
             {/* Form Modal */}

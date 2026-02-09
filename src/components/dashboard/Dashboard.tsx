@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
-  Card,
-  CardContent,
   Typography,
   Box,
   CircularProgress,
   alpha,
-  useTheme
+  useTheme,
+  Tabs,
+  Tab,
+  Paper,
+  Grid,
+  Divider
 } from '@mui/material'
 import {
   CameraAlt,
@@ -18,35 +20,46 @@ import {
   Wifi,
   Face,
   DevicesOther,
-  CheckCircle,
-  Warning as WarningIcon,
+  Dashboard as DashboardIcon
 } from '@mui/icons-material'
 import { api } from '../../services/api'
 import { NetworkDevice } from '../../lib/supabase'
+import DeviceList from '../../pages/DeviceList'
+import { useAppSelector } from '../../hooks/useApp'
+import {
+  Info as InfoIcon,
+  Settings as SettingsIcon,
+  Warning as WarningIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Language as LanguageIcon
+} from '@mui/icons-material'
 
 const iconMap: any = {
-  CameraAlt: <CameraAlt sx={{ fontSize: 20 }} />,
-  Dvr: <Dvr sx={{ fontSize: 20 }} />,
-  Router: <Router sx={{ fontSize: 20 }} />,
-  Storage: <Storage sx={{ fontSize: 20 }} />,
-  Computer: <Computer sx={{ fontSize: 20 }} />,
-  Wifi: <Wifi sx={{ fontSize: 20 }} />,
-  Face: <Face sx={{ fontSize: 20 }} />,
-  DevicesOther: <DevicesOther sx={{ fontSize: 20 }} />
+  CameraAlt: <CameraAlt sx={{ fontSize: 18 }} />,
+  Dvr: <Dvr sx={{ fontSize: 18 }} />,
+  Router: <Router sx={{ fontSize: 18 }} />,
+  Storage: <Storage sx={{ fontSize: 18 }} />,
+  Computer: <Computer sx={{ fontSize: 18 }} />,
+  Wifi: <Wifi sx={{ fontSize: 18 }} />,
+  Face: <Face sx={{ fontSize: 18 }} />,
+  DevicesOther: <DevicesOther sx={{ fontSize: 18 }} />
 }
-
-const colors = ['#3b82f6', '#22c55e', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899', '#ef4444', '#6b7280']
 
 export default function Dashboard() {
   const theme = useTheme()
-  const navigate = useNavigate()
+  const { currentProject, currentClient } = useAppSelector((state) => state.project)
   const [devices, setDevices] = useState<NetworkDevice[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedTab, setSelectedTab] = useState('all')
+  const [hasIntegration, setHasIntegration] = useState(false)
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (currentProject) {
+      loadData()
+    }
+  }, [currentProject?.id])
 
   const loadData = async () => {
     try {
@@ -56,6 +69,16 @@ export default function Dashboard() {
       ])
       setDevices(devs || [])
       setCategories(cats || [])
+
+      // Check for integration
+      if (currentProject) {
+        try {
+          const config = await api.getIntegrationConfig(currentProject.id, 'hikcentral')
+          setHasIntegration(!!config)
+        } catch (e) {
+          setHasIntegration(false)
+        }
+      }
     } catch (error) {
       console.error(error)
     } finally {
@@ -63,210 +86,150 @@ export default function Dashboard() {
     }
   }
 
-  const getStats = () => {
-    return {
-      active: devices.filter(d => d.status === 'active').length,
-      offline: devices.filter(d => d.status !== 'active').length
-    }
-  }
-
-  const stats = getStats()
-
-  const cards = categories.map((cat, index) => {
-    const count = devices.filter(d => d.device_type === cat.slug).length
-    return {
-      title: cat.name,
-      count,
-      icon: iconMap[cat.icon] || <DevicesOther sx={{ fontSize: 20 }} />,
-      path: `/devices/${cat.slug}`,
-      color: colors[index % colors.length]
-    }
-  })
-
-  const categorySlugs = categories.map(c => c.slug)
-  const otherCount = devices.filter(d => !categorySlugs.includes(d.device_type)).length
-  if (otherCount > 0) {
-    cards.push({
-      title: 'Outros',
-      count: otherCount,
-      icon: <DevicesOther sx={{ fontSize: 20 }} />,
-      path: '/devices/other',
-      color: '#6b7280'
-    })
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
+    setSelectedTab(newValue)
   }
 
   if (loading) {
-    return <Box display="flex" justifyContent="center" p={4}><CircularProgress size={24} /></Box>
+    return (
+      <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" p={8}>
+        <CircularProgress size={32} thickness={5} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontWeight: 600 }}>
+          Sincronizando dispositivos...
+        </Typography>
+      </Box>
+    )
   }
+
+  // Define tabs: Start with "Todos", then categories
+  const tabs = [
+    { label: 'Visão Geral', value: 'all', icon: <DevicesOther /> },
+    ...categories.map(cat => ({
+      label: cat.name,
+      value: cat.slug,
+      icon: iconMap[cat.icon] || <DevicesOther />
+    }))
+  ]
 
   return (
     <Box>
-      {/* Header */}
-      <Box mb={2}>
-        <Typography variant="h5" fontWeight={600}>
-          Dashboard Geral
-        </Typography>
+      {/* Project Identity & Hero Section */}
+      <Box sx={{ mb: 4 }}>
+        <Box display="flex" alignItems="center" gap={2} mb={1}>
+          <Box sx={{
+            width: 48,
+            height: 48,
+            bgcolor: 'primary.main',
+            borderRadius: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(230, 0, 18, 0.2)'
+          }}>
+            <DashboardIcon sx={{ color: 'white', fontSize: 24 }} />
+          </Box>
+          <Box>
+            <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: '-0.5px' }}>
+              {currentProject?.name || 'Visão Geral do Projeto'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+              {currentClient?.name} • ID: {currentProject?.id.slice(0, 8).toUpperCase()}
+            </Typography>
+          </Box>
+        </Box>
+        <Divider sx={{ mt: 2 }} />
       </Box>
 
-      {/* Status Summary - Grafana Single Stat Style */}
-      <Box sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
-        gap: 1,
-        mb: 2
-      }}>
-        {/* Online */}
-        <Card sx={{
-          bgcolor: alpha('#22c55e', 0.08),
-          border: `1px solid ${alpha('#22c55e', 0.2)}`,
-          '&:hover': { borderColor: alpha('#22c55e', 0.4) }
-        }}>
-          <CardContent sx={{ py: 1.5, px: 2 }}>
-            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-              <Box
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  bgcolor: '#22c55e',
-                  boxShadow: '0 0 8px #22c55e'
-                }}
-              />
-              <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Online
-              </Typography>
-            </Box>
-            <Typography variant="h4" fontWeight={600} sx={{ color: '#22c55e' }}>
-              {stats.active}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        {/* Offline */}
-        <Card sx={{
-          bgcolor: alpha('#ef4444', 0.08),
-          border: `1px solid ${alpha('#ef4444', 0.2)}`,
-          '&:hover': { borderColor: alpha('#ef4444', 0.4) }
-        }}>
-          <CardContent sx={{ py: 1.5, px: 2 }}>
-            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-              <Box
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  bgcolor: '#ef4444'
-                }}
-              />
-              <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                Offline
-              </Typography>
-            </Box>
-            <Typography variant="h4" fontWeight={600} sx={{ color: '#ef4444' }}>
-              {stats.offline}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        {/* Total */}
-        <Card sx={{
-          bgcolor: alpha('#3b82f6', 0.08),
-          border: `1px solid ${alpha('#3b82f6', 0.2)}`,
-          '&:hover': { borderColor: alpha('#3b82f6', 0.4) }
-        }}>
-          <CardContent sx={{ py: 1.5, px: 2 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Total
-            </Typography>
-            <Typography variant="h4" fontWeight={600} sx={{ color: '#3b82f6' }}>
-              {devices.length}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        {/* Categories */}
-        <Card sx={{
-          bgcolor: alpha('#8b5cf6', 0.08),
-          border: `1px solid ${alpha('#8b5cf6', 0.2)}`,
-          '&:hover': { borderColor: alpha('#8b5cf6', 0.4) }
-        }}>
-          <CardContent sx={{ py: 1.5, px: 2 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Categorias
-            </Typography>
-            <Typography variant="h4" fontWeight={600} sx={{ color: '#8b5cf6' }}>
-              {categories.length}
-            </Typography>
-          </CardContent>
-        </Card>
-      </Box>
-
-      {/* Categories Section Header */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5} mt={3}>
-        <Typography variant="body2" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
-          Categorias de Dispositivos
-        </Typography>
-      </Box>
-
-      {/* Category Cards - Compact Grid */}
-      <Box sx={{
-        display: 'grid',
-        gridTemplateColumns: {
-          xs: 'repeat(2, 1fr)',
-          sm: 'repeat(3, 1fr)',
-          md: 'repeat(4, 1fr)',
-          lg: 'repeat(5, 1fr)'
-        },
-        gap: 1
-      }}>
-        {cards.map((card, index) => (
-          <Card
-            key={index}
-            sx={{
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
+      {/* Premium Metric Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {[
+          { label: 'TOTAL DISPOSITIVOS', value: devices.length, color: theme.palette.text.primary, icon: <DevicesOther /> },
+          { label: 'DISPOSITIVOS ONLINE', value: devices.filter(d => d.status === 'active').length, color: theme.palette.success.main, icon: <CheckCircleIcon /> },
+          { label: 'INTEGRAÇÕES', value: hasIntegration ? 1 : 0, color: '#6366f1', icon: <LanguageIcon /> },
+          { label: 'ALERTAS RECENTES', value: 0, color: theme.palette.warning.main, icon: <WarningIcon /> }
+        ].map((metric, idx) => (
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+            <Paper sx={{
+              p: 3,
+              borderRadius: 1.5,
+              border: '2px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              transition: 'all 0.2s ease',
               '&:hover': {
-                borderColor: alpha(card.color, 0.5),
-                bgcolor: alpha(card.color, 0.04)
+                borderColor: metric.color,
+                transform: 'translateY(-4px)',
+                boxShadow: theme.shadows[4]
               }
-            }}
-            onClick={() => navigate(card.path)}
-          >
-            <CardContent sx={{ py: 1.5, px: 2 }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Box
-                  sx={{
-                    p: 0.75,
-                    borderRadius: 1,
-                    bgcolor: alpha(card.color, 0.15),
-                    color: card.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  {card.icon}
-                </Box>
-                <Typography variant="h5" fontWeight={600}>
-                  {card.count}
+            }}>
+              <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                <Box sx={{ color: 'text.secondary' }}>{metric.icon}</Box>
+                <Typography variant="h3" fontWeight={900} sx={{ color: metric.color }}>
+                  {metric.value}
                 </Typography>
               </Box>
-              <Typography
-                variant="caption"
-                sx={{
-                  mt: 1,
-                  display: 'block',
-                  color: 'text.secondary',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}
-              >
-                {card.title}
+              <Typography variant="caption" fontWeight={800} sx={{ color: 'text.secondary', letterSpacing: '1px' }}>
+                {metric.label}
               </Typography>
-            </CardContent>
-          </Card>
+            </Paper>
+          </Grid>
         ))}
+      </Grid>
+
+      {/* Tabs Navigation */}
+      <Paper sx={{ mb: 3, borderRadius: 1.5, border: '2px solid', borderColor: 'divider', overflow: 'hidden' }}>
+        <Tabs
+          value={selectedTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            bgcolor: 'background.paper',
+            borderBottom: 1,
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 800,
+              minHeight: 64,
+              fontSize: '0.9rem',
+              px: 4,
+              gap: 1.5,
+              '&.Mui-selected': {
+                color: 'primary.main',
+                bgcolor: alpha(theme.palette.primary.main, 0.03),
+              }
+            },
+            '& .MuiTabs-indicator': {
+              height: 4,
+              borderRadius: '4px 4px 0 0'
+            }
+          }}
+        >
+          {tabs.map((tab) => (
+            <Tab
+              key={tab.value}
+              label={tab.label}
+              value={tab.value}
+              icon={tab.icon}
+              iconPosition="start"
+            />
+          ))}
+        </Tabs>
+
+        <Box sx={{ p: 2, bgcolor: '#f8f9fa', borderTop: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="body2" color="text.secondary" fontWeight={600}>
+            Mostrando <strong style={{ color: theme.palette.text.primary }}>
+              {selectedTab === 'all' ? devices.length : devices.filter(d => d.device_type === selectedTab).length}
+            </strong> dispositivos na categoria <strong>{tabs.find(t => t.value === selectedTab)?.label}</strong>
+          </Typography>
+        </Box>
+      </Paper>
+
+      {/* Device List with filtered context */}
+      <Box mt={4}>
+        <DeviceList categoryOverride={selectedTab} />
       </Box>
     </Box>
   )

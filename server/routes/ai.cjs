@@ -536,11 +536,11 @@ router.post('/confirm-import', async (req, res) => {
         let defaultVlanId = null;
         try {
             const vlanResult = await dbPool.query(
-                'SELECT id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1',
+                'SELECT vlan_id FROM vlans WHERE project_id = $1 ORDER BY vlan_id ASC LIMIT 1',
                 [req.projectId]
             );
             if (vlanResult.rows.length > 0) {
-                defaultVlanId = vlanResult.rows[0].id;
+                defaultVlanId = vlanResult.rows[0].vlan_id;
             }
         } catch (e) {
             console.error('Error getting VLAN:', e);

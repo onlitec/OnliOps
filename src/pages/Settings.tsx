@@ -19,6 +19,13 @@ export default function Settings() {
 
   const settingsCards = [
     {
+      title: 'Central de Integrações',
+      description: 'Gerencie conexões externas e sincronização HikCentral',
+      icon: <SettingsIcon sx={{ fontSize: 48, color: '#6366f1' }} />,
+      path: '/settings/integrations',
+      available: true
+    },
+    {
       title: 'Categorias de Dispositivos',
       description: 'Gerencie as categorias de dispositivos do sistema',
       icon: <CategoryIcon sx={{ fontSize: 48, color: '#3b82f6' }} />,

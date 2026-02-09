@@ -1,5 +1,5 @@
 import React from 'react'
-import { Eye, Edit, Trash2, Wifi, WifiOff } from 'lucide-react'
+import { Eye, Edit, Trash2, Wifi, WifiOff, ArrowUp, ArrowDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { NetworkDevice } from '../../lib/supabase'
 import { api } from '../../services/api'
 
@@ -9,6 +9,8 @@ interface InventoryTableProps {
     onView: (device: NetworkDevice) => void
     onEdit: (device: NetworkDevice) => void
     onRefresh: () => void
+    sortConfig: { key: string, direction: 'asc' | 'desc' | null }
+    onSort: (key: string) => void
 }
 
 const InventoryTable: React.FC<InventoryTableProps> = ({
@@ -16,7 +18,9 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
     loading,
     onView,
     onEdit,
-    onRefresh
+    onRefresh,
+    sortConfig,
+    onSort
 }) => {
     const handleDelete = async (device: NetworkDevice) => {
         if (!confirm(`Tem certeza que deseja excluir o dispositivo ${device.hostname || device.ip_address}?`)) {
@@ -101,27 +105,28 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Serial
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                IP / Hostname
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Tipo
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Modelo
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Fabricante
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Localização
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
+                            {[
+                                { key: 'serial_number', label: 'Serial' },
+                                { key: 'ip_address', label: 'IP / Hostname' },
+                                { key: 'device_type', label: 'Tipo' },
+                                { key: 'model', label: 'Modelo' },
+                                { key: 'manufacturer', label: 'Fabricante' },
+                                { key: 'location', label: 'Localização' },
+                                { key: 'status', label: 'Status' }
+                            ].map((col) => (
+                                <th
+                                    key={col.key}
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                                    onClick={() => onSort(col.key)}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        {col.label}
+                                        {sortConfig.key === col.key && (
+                                            sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                                        )}
+                                    </div>
+                                </th>
+                            ))}
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Ações
                             </th>

@@ -8,10 +8,40 @@ import InventoryForm from '../components/inventory/InventoryForm'
 import DeviceDetailsSheet from '../components/inventory/DeviceDetailsSheet'
 import ImportModal from '../components/inventory/ImportModal'
 import SmartImportModal from '../components/inventory/SmartImportModal'
-import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material'
+import {
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    ListItemText,
+    Box,
+    Typography,
+    Grid,
+    Card,
+    CardActionArea,
+    Button,
+    useTheme,
+    CircularProgress,
+    Divider
+} from '@mui/material'
+import {
+    Business as BusinessIcon,
+    ChevronRight as ChevronRightIcon,
+    ArrowBack as ArrowBackIcon,
+    Dashboard as DashboardIcon
+} from '@mui/icons-material'
+import { useAppDispatch, useAppSelector } from '../hooks/useApp'
+import { setCurrentClient, setCurrentProject, fetchClients, fetchClientProjects } from '../store/slices/projectSlice'
 
-export default function DeviceList() {
+interface DeviceListProps {
+    categoryOverride?: string
+}
+
+export default function DeviceList({ categoryOverride }: DeviceListProps) {
     const navigate = useNavigate()
+    const theme = useTheme()
+    const dispatch = useAppDispatch()
+    const { currentClient, currentProject, clients, projects } = useAppSelector((state) => state.project)
+
     const [devices, setDevices] = useState<NetworkDevice[]>([])
     const [filteredDevices, setFilteredDevices] = useState<NetworkDevice[]>([])
     const [categories, setCategories] = useState<any[]>([])
@@ -24,20 +54,41 @@ export default function DeviceList() {
     const [showImport, setShowImport] = useState(false)
     const [showSmartImport, setShowSmartImport] = useState(false)
     const [importMenuAnchor, setImportMenuAnchor] = useState<null | HTMLElement>(null)
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({
+        key: 'ip_address',
+        direction: 'asc'
+    })
 
-    const { category } = useParams()
+    const { category: urlCategory } = useParams()
+    const category = categoryOverride || urlCategory
 
     // Filters
     const [filterManufacturer, setFilterManufacturer] = useState<string>('all')
     const [filterLocation, setFilterLocation] = useState<string>('all')
 
     useEffect(() => {
-        loadData()
-    }, [])
+        if (!categoryOverride && clients.length === 0) {
+            dispatch(fetchClients())
+        }
+    }, [dispatch, clients.length, categoryOverride])
+
+    useEffect(() => {
+        if (!categoryOverride && currentClient && projects.length === 0) {
+            dispatch(fetchClientProjects(currentClient.id))
+        }
+    }, [dispatch, currentClient, projects.length, categoryOverride])
+
+    useEffect(() => {
+        if (categoryOverride || (currentClient && currentProject)) {
+            loadData()
+        } else if (!categoryOverride) {
+            setLoading(false)
+        }
+    }, [categoryOverride, currentClient, currentProject])
 
     useEffect(() => {
         applyFilters()
-    }, [devices, categories, searchTerm, filterManufacturer, filterLocation, category])
+    }, [devices, categories, searchTerm, filterManufacturer, filterLocation, category, sortConfig])
 
     const loadData = async () => {
         setLoading(true)
@@ -66,10 +117,6 @@ export default function DeviceList() {
                 filtered = filtered.filter(d => d.device_type === 'other' || !categorySlugs.includes(d.device_type))
             } else if (category === 'nvr') {
                 // Special handling for legacy NVR/DVR split if needed, or rely on distinct categories
-                // If the user has both 'nvr' and 'dvr' categories, this might be split. 
-                // But our default migration added 'nvr' category with name 'NVRs / DVRs'.
-                // If existing data has 'dvr', we should probably map it to 'nvr' or include it.
-                // For now, let's include 'dvr' in 'nvr' view if 'nvr' category is selected
                 filtered = filtered.filter(d => d.device_type === 'nvr' || d.device_type === 'dvr')
             } else if (category === 'controller') {
                 filtered = filtered.filter(d => ['controller', 'reader', 'access_control'].includes(d.device_type))
@@ -102,11 +149,37 @@ export default function DeviceList() {
             filtered = filtered.filter(device => device.location === filterLocation)
         }
 
+        // Sorting
+        if (sortConfig.key && sortConfig.direction) {
+            filtered.sort((a: any, b: any) => {
+                const aValue = a[sortConfig.key] || ''
+                const bValue = b[sortConfig.key] || ''
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1
+                }
+                return 0
+            })
+        }
+
         setFilteredDevices(filtered)
     }
 
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' | null = 'asc'
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc'
+        } else if (sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = null
+        }
+        setSortConfig({ key, direction })
+    }
+
     const getTitle = () => {
-        if (!category) return 'Todos os Dispositivos'
+        if (!category || category === 'all') return 'Todos os Dispositivos'
         const cat = categories.find(c => c.slug === category)
         return cat ? cat.name : 'Outros Dispositivos'
     }
@@ -164,14 +237,210 @@ export default function DeviceList() {
     const manufacturers = Array.from(new Set(devices.map(d => d.manufacturer).filter(Boolean)))
     const locations = Array.from(new Set(devices.map(d => d.location).filter(Boolean)))
 
+    const handleClientSelect = (client: any) => {
+        dispatch(setCurrentClient(client))
+        dispatch(fetchClientProjects(client.id))
+    }
+
+    const handleProjectSelect = (project: any) => {
+        dispatch(setCurrentProject(project))
+    }
+
+    // Hierarchy Selection View (only when accessed directly)
+    if (!categoryOverride) {
+        if (!currentClient) {
+            return (
+                <Box sx={{ p: 4 }}>
+                    <Box mb={6} textAlign="center">
+                        <Typography variant="h4" fontWeight={900} gutterBottom sx={{ letterSpacing: '-0.5px' }}>
+                            Inventário de Dispositivos
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary">
+                            Selecione um cliente para visualizar seu inventário de dispositivos.
+                        </Typography>
+                    </Box>
+
+                    <Grid container spacing={2} justifyContent="center" sx={{ maxWidth: 1000, mx: 'auto' }}>
+                        {clients.map(client => (
+                            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={client.id}>
+                                <Card
+                                    sx={{
+                                        height: '100%',
+                                        border: '2px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 2,
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                            borderColor: 'primary.main',
+                                            transform: 'translateY(-2px)',
+                                            boxShadow: theme.shadows[4]
+                                        }
+                                    }}
+                                >
+                                    <CardActionArea
+                                        onClick={() => handleClientSelect(client)}
+                                        sx={{ height: '100%', p: 2 }}
+                                    >
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Box sx={{
+                                                width: 40,
+                                                height: 40,
+                                                bgcolor: 'rgba(230, 0, 18, 0.05)',
+                                                borderRadius: 1,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'primary.main',
+                                                border: '1px solid rgba(230, 0, 18, 0.1)'
+                                            }}>
+                                                <BusinessIcon fontSize="small" />
+                                            </Box>
+                                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                <Typography variant="subtitle2" fontWeight={700} noWrap>
+                                                    {client.name}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Selecionar Cliente
+                                                </Typography>
+                                            </Box>
+                                            <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                                        </Box>
+                                    </CardActionArea>
+                                </Card>
+                            </Grid>
+                        ))}
+                        {clients.length === 0 && (
+                            <Grid size={{ xs: 12 }}>
+                                <Box textAlign="center" py={8} bgcolor="rgba(0,0,0,0.02)" borderRadius={2} border="2px dashed" borderColor="divider">
+                                    <Typography color="text.secondary">Nenhum cliente disponível.</Typography>
+                                </Box>
+                            </Grid>
+                        )}
+                    </Grid>
+                </Box>
+            )
+        }
+
+        if (!currentProject) {
+            return (
+                <Box sx={{ p: 4 }}>
+                    <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
+                        <Box>
+                            <Typography variant="h4" fontWeight={900} gutterBottom sx={{ letterSpacing: '-0.5px' }}>
+                                Selecionar Projeto
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                Cliente: <strong>{currentClient.name}</strong>
+                            </Typography>
+                        </Box>
+                        <Button
+                            variant="outlined"
+                            startIcon={<ArrowBackIcon />}
+                            onClick={() => dispatch(setCurrentClient(null))}
+                            sx={{ fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
+                        >
+                            Trocar Cliente
+                        </Button>
+                    </Box>
+
+                    <Grid container spacing={2} sx={{ maxWidth: 1000 }}>
+                        {projects.map(project => (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={project.id}>
+                                <Card
+                                    sx={{
+                                        height: '100%',
+                                        border: '2px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 2,
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                            borderColor: 'primary.main',
+                                            transform: 'translateY(-2px)',
+                                            boxShadow: theme.shadows[4]
+                                        }
+                                    }}
+                                >
+                                    <CardActionArea
+                                        onClick={() => handleProjectSelect(project)}
+                                        sx={{ height: '100%', p: 2 }}
+                                    >
+                                        <Box display="flex" alignItems="center" gap={2}>
+                                            <Box sx={{
+                                                width: 40,
+                                                height: 40,
+                                                bgcolor: 'primary.main',
+                                                borderRadius: 1,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white'
+                                            }}>
+                                                <DashboardIcon fontSize="small" />
+                                            </Box>
+                                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                <Typography variant="subtitle2" fontWeight={700} noWrap>
+                                                    {project.name}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Abrir Inventário
+                                                </Typography>
+                                            </Box>
+                                            <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                                        </Box>
+                                    </CardActionArea>
+                                </Card>
+                            </Grid>
+                        ))}
+                        {projects.length === 0 && !loading && (
+                            <Grid size={{ xs: 12 }}>
+                                <Box textAlign="center" py={8} bgcolor="rgba(0,0,0,0.02)" borderRadius={2} border="2px dashed" borderColor="divider">
+                                    <Typography color="text.secondary">Este cliente não possui projetos cadastrados.</Typography>
+                                </Box>
+                            </Grid>
+                        )}
+                        {loading && (
+                            <Grid size={{ xs: 12 }}>
+                                <Box textAlign="center" py={8}>
+                                    <CircularProgress />
+                                </Box>
+                            </Grid>
+                        )}
+                    </Grid>
+                </Box>
+            )
+        }
+    }
+
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">{getTitle()}</h1>
-                    <p className="text-gray-600 mt-1">Gerencie os dispositivos desta categoria</p>
+                    <Box display="flex" alignItems="center" gap={1.5} mb={0.5}>
+                        {!categoryOverride && (
+                            <Box sx={{ width: 32, height: 32, bgcolor: 'primary.main', borderRadius: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <DashboardIcon sx={{ color: 'white', fontSize: 18 }} />
+                            </Box>
+                        )}
+                        <h1 className="text-3xl font-bold text-gray-900">{getTitle()}</h1>
+                    </Box>
+                    <p className="text-gray-600">
+                        {categoryOverride
+                            ? 'Gerencie os dispositivos desta categoria'
+                            : `Projeto: ${currentProject?.name} (${currentClient?.name})`}
+                    </p>
                 </div>
                 <div className="flex gap-3">
+                    {!categoryOverride && (
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<ArrowBackIcon />}
+                            onClick={() => dispatch(setCurrentProject(null))}
+                            sx={{ fontWeight: 700, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
+                        >
+                            Trocar Projeto
+                        </Button>
+                    )}
                     <button
                         onClick={(e) => setImportMenuAnchor(e.currentTarget)}
                         className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
@@ -287,6 +556,8 @@ export default function DeviceList() {
                 onView={handleViewDevice}
                 onEdit={handleEditDevice}
                 onRefresh={loadData}
+                sortConfig={sortConfig}
+                onSort={handleSort}
             />
 
             {showForm && (

@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
     AppBar,
     Toolbar,
@@ -14,10 +14,11 @@ import {
     Avatar,
     Menu,
     MenuItem,
-    Chip,
     alpha,
-    Button,
-    Tooltip
+    Tooltip,
+    Drawer,
+    CssBaseline,
+    Divider
 } from '@mui/material'
 import {
     Dashboard as DashboardIcon,
@@ -28,22 +29,29 @@ import {
     Home as HomeIcon,
     FolderShared as ClientsIcon,
     NotificationsActive as AlertsIcon,
-    Language as LanguageIcon
+    Language as LanguageIcon,
+    Menu as MenuIcon,
+    ChevronLeft as ChevronLeftIcon
 } from '@mui/icons-material'
 import { useAppDispatch, useAppSelector } from '../hooks/useApp'
 import { logout } from '../store/slices/authSlice'
+import { clearProjectContext } from '../store/slices/projectSlice'
 import { useBranding } from '../context/BrandingContext'
 import { useTheme } from '@mui/material/styles'
+
+const drawerWidth = 240
 
 export default function MainLayout() {
     const theme = useTheme()
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+    const [open, setOpen] = useState(true)
     const { logo } = useBranding()
 
     const navigate = useNavigate()
     const location = useLocation()
     const dispatch = useAppDispatch()
     const { user } = useAppSelector((state) => state.auth)
+    const { currentClient, currentProject } = useAppSelector((state) => state.project)
 
     const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget)
     const handleProfileMenuClose = () => setAnchorEl(null)
@@ -53,15 +61,28 @@ export default function MainLayout() {
         navigate('/login')
     }
 
+    const handleHomeClick = () => {
+        dispatch(clearProjectContext())
+        navigate('/')
+    }
+
     const navigationItems = [
-        { text: 'Início', icon: <HomeIcon fontSize="small" />, path: '/' },
-        { text: 'Gerenciamento', icon: <ClientsIcon fontSize="small" />, path: '/settings/clients' },
-        { text: 'Monitoramento', icon: <MonitorIcon fontSize="small" />, path: '/monitoring' },
-        { text: 'Configurações', icon: <SettingsIcon fontSize="small" />, path: '/settings' },
+        { text: 'Dashboard Global', icon: <HomeIcon />, path: '/', action: handleHomeClick },
+        { text: 'Monitoramento', icon: <MonitorIcon />, path: '/monitoring' },
+        { text: 'Central de Integrações', icon: <LanguageIcon />, path: '/settings/integrations' },
+        { text: 'Gerenciamento', icon: <ClientsIcon />, path: '/settings/clients' },
+        { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
     ]
 
+    const toggleDrawer = () => {
+        setOpen(!open)
+    }
+
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+            <CssBaseline />
+
+            {/* AppBar */}
             <AppBar
                 position="fixed"
                 sx={{
@@ -69,12 +90,26 @@ export default function MainLayout() {
                     backgroundColor: '#151b26',
                     color: '#ffffff',
                     boxShadow: 'none',
-                    borderBottom: `2px solid ${theme.palette.primary.main}`
+                    borderBottom: `2px solid ${theme.palette.primary.main}`,
+                    transition: theme.transitions.create(['width', 'margin'], {
+                        easing: theme.transitions.easing.sharp,
+                        duration: theme.transitions.duration.leavingScreen,
+                    }),
                 }}
             >
                 <Toolbar sx={{ minHeight: '56px !important', px: 2 }}>
+                    <IconButton
+                        color="inherit"
+                        aria-label="open drawer"
+                        onClick={toggleDrawer}
+                        edge="start"
+                        sx={{ mr: 2 }}
+                    >
+                        {open ? <ChevronLeftIcon /> : <MenuIcon />}
+                    </IconButton>
+
                     {/* Logo Area */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mr: 4 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 0 }}>
                         {logo?.url ? (
                             <Box
                                 component="img"
@@ -102,39 +137,45 @@ export default function MainLayout() {
                         )}
                     </Box>
 
-                    {/* Navigation Items (Top Bar) */}
-                    <Box sx={{ display: 'flex', gap: 0.5, flexGrow: 1 }}>
-                        {navigationItems.map((item) => {
-                            const isActive = location.pathname === item.path ||
-                                (item.path !== '/' && location.pathname.startsWith(item.path))
+                    {/* Spacer */}
+                    <Box sx={{ flexGrow: 1 }} />
 
-                            return (
-                                <Button
-                                    key={item.text}
-                                    startIcon={item.icon}
-                                    onClick={() => navigate(item.path)}
-                                    sx={{
-                                        color: isActive ? '#ffffff' : 'rgba(255,255,255,0.65)',
-                                        bgcolor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                        px: 2,
-                                        py: 0.8,
-                                        borderRadius: 0,
-                                        height: '56px',
-                                        textTransform: 'none',
-                                        fontSize: '0.875rem',
-                                        fontWeight: isActive ? 600 : 400,
-                                        borderBottom: isActive ? `3px solid ${theme.palette.primary.main}` : '3px solid transparent',
-                                        '&:hover': {
-                                            bgcolor: 'rgba(255,255,255,0.05)',
-                                            color: '#ffffff'
-                                        }
-                                    }}
-                                >
-                                    {item.text}
-                                </Button>
-                            )
-                        })}
-                    </Box>
+                    {/* Context Information (Current Client/Project) */}
+                    {currentClient && (
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            mr: 3,
+                            bgcolor: 'rgba(255,255,255,0.05)',
+                            px: 2,
+                            py: 0.5,
+                            borderRadius: 1,
+                            border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <Box>
+                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', display: 'block', lineHeight: 1 }}>
+                                    CLIENTE
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.light' }}>
+                                    {currentClient.name}
+                                </Typography>
+                            </Box>
+                            {currentProject && (
+                                <>
+                                    <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255,255,255,0.1)', my: 0.8 }} />
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', display: 'block', lineHeight: 1 }}>
+                                            PROJETO
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#ffffff' }}>
+                                            {currentProject.name}
+                                        </Typography>
+                                    </Box>
+                                </>
+                            )}
+                        </Box>
+                    )}
 
                     {/* Right Side Tools */}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -173,6 +214,94 @@ export default function MainLayout() {
                 </Toolbar>
             </AppBar>
 
+            {/* Sidebar (Drawer) */}
+            <Drawer
+                variant="permanent"
+                open={open}
+                sx={{
+                    width: open ? drawerWidth : 64,
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                    boxSizing: 'border-box',
+                    [`& .MuiDrawer-paper`]: {
+                        width: open ? drawerWidth : 64,
+                        overflowX: 'hidden',
+                        backgroundColor: '#151b26',
+                        color: 'rgba(255,255,255,0.7)',
+                        borderRight: '1px solid rgba(255,255,255,0.05)',
+                        transition: theme.transitions.create('width', {
+                            easing: theme.transitions.easing.sharp,
+                            duration: theme.transitions.duration.enteringScreen,
+                        }),
+                        zIndex: (theme) => theme.zIndex.drawer,
+                        pt: '56px'
+                    },
+                }}
+            >
+                <List sx={{ pt: 2 }}>
+                    {navigationItems.map((item) => {
+                        const isActive = location.pathname === item.path ||
+                            (item.path !== '/' && location.pathname.startsWith(item.path))
+
+                        return (
+                            <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
+                                <ListItemButton
+                                    onClick={() => item.action ? item.action() : navigate(item.path)}
+                                    sx={{
+                                        minHeight: 48,
+                                        justifyContent: open ? 'initial' : 'center',
+                                        px: 2.5,
+                                        color: isActive ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                                        bgcolor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                        borderLeft: isActive ? `4px solid ${theme.palette.primary.main}` : '4px solid transparent',
+                                        '&:hover': {
+                                            bgcolor: 'rgba(255,255,255,0.04)',
+                                            color: '#ffffff'
+                                        }
+                                    }}
+                                >
+                                    <ListItemIcon
+                                        sx={{
+                                            minWidth: 0,
+                                            mr: open ? 3 : 'auto',
+                                            justifyContent: 'center',
+                                            color: 'inherit'
+                                        }}
+                                    >
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={item.text}
+                                        sx={{
+                                            opacity: open ? 1 : 0,
+                                            '& .MuiTypography-root': {
+                                                fontSize: '0.875rem',
+                                                fontWeight: isActive ? 600 : 400
+                                            }
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        )
+                    })}
+                </List>
+
+                <Box sx={{ flexGrow: 1 }} />
+
+                {/* Language / Environment indicator in Sidebar when open */}
+                {open && (
+                    <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)' }}>
+                        <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <LanguageIcon sx={{ fontSize: 14 }} /> Português (BR)
+                        </Typography>
+                        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.05)', my: 1 }} />
+                        <Typography variant="caption" color="primary.main" fontWeight={700}>
+                            PRODUÇÃO V1.2
+                        </Typography>
+                    </Box>
+                )}
+            </Drawer>
+
             {/* Profile Menu */}
             <Menu
                 anchorEl={anchorEl}
@@ -204,34 +333,20 @@ export default function MainLayout() {
                 </MenuItem>
             </Menu>
 
-            {/* Sub-Header / Context Bar (Optional but common in HikCentral) */}
-            <Box sx={{
-                mt: '56px',
-                height: 40,
-                bgcolor: '#f8f9fb',
-                borderBottom: '1px solid #d1d5db',
-                display: 'flex',
-                alignItems: 'center',
-                px: 3
-            }}>
-                <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <LanguageIcon sx={{ fontSize: 14 }} /> Brasil / Português
-                </Typography>
-                <Divider orientation="vertical" flexItem sx={{ mx: 2, my: 1 }} />
-                <Typography variant="caption" fontWeight={600} color="primary.main">
-                    Ambiente de Produção
-                </Typography>
-            </Box>
-
             {/* Main Content Area */}
             <Box
                 component="main"
                 sx={{
                     flexGrow: 1,
                     p: 3,
-                    width: '100%',
-                    minHeight: 'calc(100vh - 96px)',
-                    animation: 'fadeIn 0.3s ease-out'
+                    width: { sm: `calc(100% - ${open ? drawerWidth : 64}px)` },
+                    mt: '56px',
+                    minHeight: 'calc(100vh - 56px)',
+                    animation: 'fadeIn 0.3s ease-out',
+                    transition: theme.transitions.create('margin', {
+                        easing: theme.transitions.easing.sharp,
+                        duration: theme.transitions.duration.leavingScreen,
+                    }),
                 }}
             >
                 <Outlet />
@@ -245,13 +360,4 @@ export default function MainLayout() {
             `}</style>
         </Box>
     )
-}
-
-function Divider({ sx, orientation, flexItem }: any) {
-    return <Box sx={{
-        bgcolor: 'rgba(0,0,0,0.12)',
-        width: orientation === 'vertical' ? '1px' : '100%',
-        height: orientation === 'vertical' ? (flexItem ? 'auto' : '100%') : '1px',
-        ...sx
-    }} />
 }
