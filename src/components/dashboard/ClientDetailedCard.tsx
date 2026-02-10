@@ -102,18 +102,18 @@ export default function ClientDetailedCard({ client, selected, onClick }: Client
                 </Box>
 
                 <Box sx={{ mt: 3, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.info.main, 0.05), border: `1px solid ${alpha(theme.palette.info.main, 0.1)}` }}>
+                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
                         <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                            <HardDrive size={14} color={theme.palette.info.main} />
-                            <Typography variant="caption" fontWeight={600} color="info.main">Dispositivos</Typography>
+                            <HardDrive size={14} color={theme.palette.primary.main} />
+                            <Typography variant="caption" fontWeight={600} color="primary.main">Dispositivos</Typography>
                         </Box>
                         <Typography variant="h5" fontWeight={700}>{client.metrics.devices}</Typography>
                     </Box>
 
-                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.success.main, 0.05), border: `1px solid ${alpha(theme.palette.success.main, 0.1)}` }}>
+                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.text.secondary, 0.05), border: `1px solid ${alpha(theme.palette.text.secondary, 0.1)}` }}>
                         <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                            <Activity size={14} color={theme.palette.success.main} />
-                            <Typography variant="caption" fontWeight={600} color="success.main">Online</Typography>
+                            <Activity size={14} color={theme.palette.text.secondary} />
+                            <Typography variant="caption" fontWeight={600} color="text.secondary">Online</Typography>
                         </Box>
                         <Typography variant="h5" fontWeight={700}>{client.metrics.onlineUsers}</Typography>
                     </Box>
@@ -136,7 +136,7 @@ export default function ClientDetailedCard({ client, selected, onClick }: Client
                             bgcolor: alpha(theme.palette.divider, 0.1),
                             '& .MuiLinearProgress-bar': {
                                 borderRadius: 2,
-                                bgcolor: client.metrics.alerts > 5 ? 'error.main' : 'success.main',
+                                bgcolor: client.metrics.alerts > 5 ? 'error.main' : 'primary.main',
                             }
                         }}
                     />
