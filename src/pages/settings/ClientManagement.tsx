@@ -32,7 +32,8 @@ import {
     Business as BusinessIcon,
     Layers as ProjectIcon,
     Devices as DeviceIcon,
-    Warning as WarningIcon
+    Warning as WarningIcon,
+    AddCircle as AddIcon
 } from '@mui/icons-material'
 import { api } from '../../services/api'
 import { useAppSelector } from '../../store/hooks'
@@ -67,6 +68,11 @@ export default function ClientManagement() {
     const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
     const [editName, setEditName] = useState('')
     const [isSaving, setIsSaving] = useState(false)
+
+    // Create Dialog
+    const [createDialogOpen, setCreateDialogOpen] = useState(false)
+    const [newClientName, setNewClientName] = useState('')
+    const [isCreating, setIsCreating] = useState(false)
 
     useEffect(() => {
         loadData()
@@ -150,6 +156,27 @@ export default function ClientManagement() {
         }
     }
 
+    const handleCreateClick = () => {
+        setNewClientName('')
+        setCreateDialogOpen(true)
+    }
+
+    const handleSaveCreate = async () => {
+        if (!newClientName.trim()) return
+
+        setIsCreating(true)
+        try {
+            await api.createClient({ name: newClientName.trim() })
+            setCreateDialogOpen(false)
+            setNewClientName('')
+            loadData()
+        } catch (err: any) {
+            setError(err.message || 'Erro ao criar cliente')
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
@@ -160,13 +187,24 @@ export default function ClientManagement() {
 
     return (
         <Box>
-            <Box mb={4}>
-                <Typography variant="h4" gutterBottom fontWeight="bold">
-                    Gerenciamento de Clientes
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                    Administre os clientes da plataforma e realize exclusões seguras
-                </Typography>
+            <Box mb={4} display="flex" justifyContent="space-between" alignItems="flex-start">
+                <Box>
+                    <Typography variant="h4" gutterBottom fontWeight="bold">
+                        Gerenciamento de Clientes
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                        Administre os clientes da plataforma e realize exclusões seguras
+                    </Typography>
+                </Box>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    onClick={handleCreateClick}
+                    sx={{ borderRadius: 2, px: 3, fontWeight: 600, textTransform: 'none' }}
+                >
+                    Cadastrar Cliente
+                </Button>
             </Box>
 
             {error && (
@@ -397,6 +435,53 @@ export default function ClientManagement() {
                         sx={{ borderRadius: 2, px: 3, textTransform: 'none', fontWeight: 600 }}
                     >
                         {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Create Client Dialog */}
+            <Dialog
+                open={createDialogOpen}
+                onClose={() => !isCreating && setCreateDialogOpen(false)}
+                PaperProps={{
+                    sx: { borderRadius: 3, p: 1, minWidth: '400px' }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 700 }}>
+                    Cadastrar Novo Cliente
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                        Insira o nome do novo cliente para cadastrá-lo na plataforma.
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        label="Nome do Cliente"
+                        variant="outlined"
+                        value={newClientName}
+                        onChange={(e) => setNewClientName(e.target.value)}
+                        disabled={isCreating}
+                        autoFocus
+                        placeholder="Ex: Empresa Exemplo Ltda"
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        onClick={() => setCreateDialogOpen(false)}
+                        disabled={isCreating}
+                        sx={{ color: 'text.secondary', textTransform: 'none' }}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleSaveCreate}
+                        variant="contained"
+                        disabled={isCreating || !newClientName.trim()}
+                        startIcon={isCreating ? <CircularProgress size={18} color="inherit" /> : null}
+                        sx={{ borderRadius: 2, px: 3, textTransform: 'none', fontWeight: 600 }}
+                    >
+                        {isCreating ? 'Criando...' : 'Cadastrar Cliente'}
                     </Button>
                 </DialogActions>
             </Dialog>
