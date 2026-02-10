@@ -23,6 +23,7 @@ import {
     CircularProgress,
     Tooltip,
     useTheme,
+    alpha,
     Divider,
     Grid,
     CardActionArea
@@ -38,6 +39,12 @@ import {
     ChevronRight as ChevronRightIcon,
     Add as AddIcon
 } from '@mui/icons-material'
+import {
+    Building2,
+    Users,
+    ChevronRight,
+    FolderOpen
+} from 'lucide-react'
 import { api } from '../../services/api'
 import { useAppDispatch, useAppSelector } from '../../hooks/useApp'
 import { setCurrentClient, fetchClients } from '../../store/slices/projectSlice'
@@ -217,6 +224,26 @@ export default function ProjectManagement() {
         return labels[status] || status
     }
 
+    const clientGradients = [
+        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+        'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+        'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
+        'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
+    ]
+
+    const projectGradients = [
+        'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+        'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)',
+        'linear-gradient(135deg, #fc5c7d 0%, #6a82fb 100%)',
+        'linear-gradient(135deg, #f857a6 0%, #ff5858 100%)',
+        'linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%)',
+        'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+    ]
+
     // Client Selection View with Mini Cards
     if (!currentClient) {
         return (
@@ -230,55 +257,96 @@ export default function ProjectManagement() {
                     </Typography>
                 </Box>
 
-                <Grid container spacing={2} justifyContent="center" sx={{ maxWidth: 1000, mx: 'auto' }}>
-                    {clients.map(client => (
-                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={client.id}>
-                            <Card
-                                sx={{
-                                    height: '100%',
-                                    border: '2px solid',
-                                    borderColor: 'divider',
-                                    borderRadius: 2,
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        borderColor: 'primary.main',
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: theme.shadows[4]
-                                    }
-                                }}
-                            >
-                                <CardActionArea
+                <Grid container spacing={3} justifyContent="center" sx={{ maxWidth: 1200, mx: 'auto' }}>
+                    {clients.map((client, index) => {
+                        const gradient = clientGradients[index % clientGradients.length]
+                        return (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={client.id}>
+                                <Card
+                                    elevation={0}
+                                    sx={{
+                                        borderRadius: 4,
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        position: 'relative',
+                                        border: '1px solid',
+                                        borderColor: alpha(theme.palette.divider, 0.08),
+                                        bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                        backdropFilter: 'blur(12px)',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        '&:hover': {
+                                            transform: 'translateY(-6px)',
+                                            boxShadow: (theme) => `0 20px 40px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                            borderColor: alpha(theme.palette.primary.main, 0.3),
+                                            '& .card-gradient': {
+                                                height: 6,
+                                            },
+                                            '& .card-arrow': {
+                                                opacity: 1,
+                                                transform: 'translateX(0)',
+                                            },
+                                            '& .card-icon': {
+                                                transform: 'scale(1.1) rotate(-5deg)',
+                                            },
+                                        }
+                                    }}
                                     onClick={() => handleClientSelect(client)}
-                                    sx={{ height: '100%', p: 2 }}
                                 >
-                                    <Box display="flex" alignItems="center" gap={2}>
-                                        <Box sx={{
-                                            width: 40,
-                                            height: 40,
-                                            bgcolor: 'rgba(230, 0, 18, 0.05)',
-                                            borderRadius: 1,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: 'primary.main',
-                                            border: '1px solid rgba(230, 0, 18, 0.1)'
-                                        }}>
-                                            <BusinessIcon fontSize="small" />
+                                    {/* Gradient accent bar */}
+                                    <Box className="card-gradient" sx={{
+                                        height: 4,
+                                        background: gradient,
+                                        transition: 'height 0.3s ease',
+                                    }} />
+                                    <CardContent sx={{ p: 3 }}>
+                                        <Box display="flex" alignItems="center" justifyContent="space-between">
+                                            <Box display="flex" alignItems="center" gap={2.5}>
+                                                <Box className="card-icon" sx={{
+                                                    width: 52,
+                                                    height: 52,
+                                                    borderRadius: 3,
+                                                    background: gradient,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'transform 0.3s ease',
+                                                    boxShadow: `0 4px 14px ${alpha('#000', 0.15)}`,
+                                                }}>
+                                                    <Building2 size={26} color="#fff" strokeWidth={1.8} />
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="h6" fontWeight={700} sx={{
+                                                        fontSize: '1.05rem',
+                                                        letterSpacing: '-0.01em',
+                                                        lineHeight: 1.3,
+                                                    }}>
+                                                        {client.name}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary" sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        mt: 0.3,
+                                                        opacity: 0.7,
+                                                    }}>
+                                                        <Users size={12} /> Cliente
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                            <Box className="card-arrow" sx={{
+                                                opacity: 0,
+                                                transform: 'translateX(-8px)',
+                                                transition: 'all 0.3s ease',
+                                                color: 'text.secondary',
+                                            }}>
+                                                <ChevronRight size={22} />
+                                            </Box>
                                         </Box>
-                                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                                            <Typography variant="subtitle2" fontWeight={700} noWrap>
-                                                {client.name}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Visualizar Projetos
-                                            </Typography>
-                                        </Box>
-                                        <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                                    </Box>
-                                </CardActionArea>
-                            </Card>
-                        </Grid>
-                    ))}
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        )
+                    })}
                     {clients.length === 0 && (
                         <Grid size={{ xs: 12 }}>
                             <Box textAlign="center" py={8} bgcolor="rgba(0,0,0,0.02)" borderRadius={2} border="2px dashed" borderColor="divider">
@@ -349,123 +417,144 @@ export default function ProjectManagement() {
                 </Alert>
             )}
 
-            <Card sx={{ border: '2px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
-                <TableContainer>
-                    <Table>
-                        <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 800 }}>PROJETO</TableCell>
-                                <TableCell sx={{ fontWeight: 800 }}>STATUS</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800 }}>DISPOSITIVOS</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800 }}>ALERTAS</TableCell>
-                                <TableCell sx={{ fontWeight: 800 }}>ÚLTIMA ATIVIDADE</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 800 }}>AÇÕES</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {projects.map((project) => (
-                                <TableRow key={project.id} hover>
-                                    <TableCell>
-                                        <Box>
-                                            <Typography variant="subtitle2" fontWeight={700}>
+            <Grid container spacing={3}>
+                {projects.map((project, index) => {
+                    const gradient = projectGradients[index % projectGradients.length]
+                    const statusColor = project.status === 'active' ? '#22c55e' : '#94a3b8'
+                    return (
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={project.id}>
+                            <Card
+                                elevation={0}
+                                sx={{
+                                    borderRadius: 4,
+                                    overflow: 'hidden',
+                                    position: 'relative',
+                                    border: '1px solid',
+                                    borderColor: alpha(theme.palette.divider, 0.08),
+                                    bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                    backdropFilter: 'blur(12px)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    '&:hover': {
+                                        transform: 'translateY(-6px)',
+                                        boxShadow: (theme) => `0 20px 40px ${alpha(theme.palette.primary.main, 0.1)}`,
+                                        borderColor: alpha(theme.palette.primary.main, 0.3),
+                                        '& .card-gradient': { height: 6 },
+                                        '& .project-actions': { opacity: 1, transform: 'translateY(0)' }
+                                    }
+                                }}
+                            >
+                                <Box className="card-gradient" sx={{
+                                    height: 4,
+                                    background: gradient,
+                                    transition: 'height 0.3s ease',
+                                }} />
+                                <CardContent sx={{ p: 3 }}>
+                                    <Box display="flex" alignItems="center" gap={2.5} mb={3}>
+                                        <Box sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2.5,
+                                            background: gradient,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: `0 4px 12px ${alpha('#000', 0.1)}`,
+                                        }}>
+                                            <FolderOpen size={24} color="#fff" />
+                                        </Box>
+                                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                            <Typography variant="h6" fontWeight={800} noWrap sx={{ letterSpacing: '-0.3px' }}>
                                                 {project.name}
                                             </Typography>
-                                            {project.description && (
-                                                <Typography variant="caption" color="text.secondary">
-                                                    {project.description}
-                                                </Typography>
-                                            )}
+                                            <Box display="flex" alignItems="center" gap={1}>
+                                                <Chip
+                                                    label={getStatusLabel(project.status)}
+                                                    size="small"
+                                                    sx={{
+                                                        height: 20,
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 700,
+                                                        bgcolor: alpha(statusColor, 0.1),
+                                                        color: statusColor,
+                                                        border: `1px solid ${alpha(statusColor, 0.2)}`
+                                                    }}
+                                                />
+                                            </Box>
                                         </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={getStatusLabel(project.status)}
-                                            color={getStatusColor(project.status)}
-                                            size="small"
-                                            sx={{ fontWeight: 700, borderRadius: 1 }}
-                                        />
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <Chip
-                                            icon={<DevicesIcon fontSize="small" />}
-                                            label={project.metrics?.devices || 0}
-                                            size="small"
-                                            variant="outlined"
-                                            sx={{ fontWeight: 600 }}
-                                        />
-                                    </TableCell>
-                                    <TableCell align="center">
-                                        <Chip
-                                            icon={<AlertsIcon fontSize="small" />}
-                                            label={project.metrics?.alerts || 0}
-                                            size="small"
-                                            variant="outlined"
-                                            color={(project.metrics?.alerts || 0) > 0 ? 'error' : 'default'}
-                                            sx={{ fontWeight: 600 }}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                    </Box>
+
+                                    <Grid container spacing={2} mb={3}>
+                                        <Grid size={{ xs: 6 }}>
+                                            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.divider, 0.03), border: `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
+                                                <Typography variant="caption" color="text.secondary" display="block">Dispositivos</Typography>
+                                                <Typography variant="subtitle1" fontWeight={700}>{project.metrics?.devices || 0}</Typography>
+                                            </Box>
+                                        </Grid>
+                                        <Grid size={{ xs: 6 }}>
+                                            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.divider, 0.03), border: `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
+                                                <Typography variant="caption" color="text.secondary" display="block">Alertas</Typography>
+                                                <Typography variant="subtitle1" fontWeight={700} color={project.metrics?.alerts ? 'error.main' : 'inherit'}>
+                                                    {project.metrics?.alerts || 0}
+                                                </Typography>
+                                            </Box>
+                                        </Grid>
+                                    </Grid>
+
+                                    <Divider sx={{ mb: 2, opacity: 0.5 }} />
+
+                                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                                        <Typography variant="caption" color="text.secondary">
                                             {project.metrics?.lastActivity
-                                                ? new Date(project.metrics.lastActivity).toLocaleDateString('pt-BR')
+                                                ? `Lido em ${new Date(project.metrics.lastActivity).toLocaleDateString('pt-BR')}`
                                                 : 'Sem atividade'}
                                         </Typography>
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <Tooltip title="Editar">
-                                            <IconButton
-                                                onClick={() => handleEditClick(project)}
-                                                size="small"
-                                                sx={{ color: 'primary.main' }}
-                                            >
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Excluir">
-                                            <IconButton
-                                                onClick={() => handleDeleteClick(project)}
-                                                size="small"
-                                                sx={{ color: 'error.main' }}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Integração HikCentral">
-                                            <IconButton
-                                                onClick={() => handleIntegrationClick(project)}
-                                                size="small"
-                                                sx={{ color: 'secondary.main' }}
-                                            >
-                                                <RouterIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {projects.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={6} align="center">
-                                        <Box py={8}>
-                                            <Typography variant="body1" color="text.secondary" gutterBottom>
-                                                Este cliente ainda não possui projetos.
-                                            </Typography>
-                                            <Button
-                                                variant="contained"
-                                                size="small"
-                                                startIcon={<AddIcon />}
-                                                onClick={handleCreateClick}
-                                                sx={{ mt: 1, fontWeight: 700 }}
-                                            >
-                                                Criar Primeiro Projeto
-                                            </Button>
+                                        <Box className="project-actions" sx={{
+                                            display: 'flex',
+                                            gap: 0.5,
+                                            opacity: { xs: 1, md: 0 },
+                                            transform: { xs: 'none', md: 'translateY(10px)' },
+                                            transition: 'all 0.3s ease'
+                                        }}>
+                                            <Tooltip title="Editar">
+                                                <IconButton size="small" onClick={() => handleEditClick(project)} sx={{ color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Integração">
+                                                <IconButton size="small" onClick={() => handleIntegrationClick(project)} sx={{ color: 'secondary.main', bgcolor: alpha(theme.palette.secondary.main, 0.05) }}>
+                                                    <RouterIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Excluir">
+                                                <IconButton size="small" onClick={() => handleDeleteClick(project)} sx={{ color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.05) }}>
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
                                         </Box>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Card>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    )
+                })}
+                {projects.length === 0 && (
+                    <Grid size={{ xs: 12 }}>
+                        <Box py={8} textAlign="center" bgcolor={alpha(theme.palette.divider, 0.02)} borderRadius={4} border="2px dashed" borderColor="divider">
+                            <Typography variant="body1" color="text.secondary" gutterBottom>
+                                Este cliente ainda não possui projetos.
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={handleCreateClick}
+                                sx={{ mt: 1, fontWeight: 700, borderRadius: 2 }}
+                            >
+                                Criar Primeiro Projeto
+                            </Button>
+                        </Box>
+                    </Grid>
+                )}
+            </Grid>
 
             {/* Dialogs remain functional and consistent */}
             <Dialog open={editDialog} onClose={() => setEditDialog(false)} maxWidth="sm" fullWidth>

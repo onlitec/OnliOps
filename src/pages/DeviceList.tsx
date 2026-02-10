@@ -572,6 +572,23 @@ export default function DeviceList({ categoryOverride }: DeviceListProps) {
                                                             </Box>
                                                         </Box>
                                                     </Box>
+
+                                                    <Grid container spacing={2} sx={{ mt: 2 }}>
+                                                        <Grid size={{ xs: 6 }}>
+                                                            <Box sx={{ p: 1, borderRadius: 2, bgcolor: alpha(theme.palette.divider, 0.03), border: `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
+                                                                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>Dispositivos</Typography>
+                                                                <Typography variant="subtitle2" fontWeight={700}>{project.metrics?.devices || 0}</Typography>
+                                                            </Box>
+                                                        </Grid>
+                                                        <Grid size={{ xs: 6 }}>
+                                                            <Box sx={{ p: 1, borderRadius: 2, bgcolor: alpha(theme.palette.divider, 0.03), border: `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
+                                                                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>Alertas</Typography>
+                                                                <Typography variant="subtitle2" fontWeight={700} color={project.metrics?.alerts ? 'error.main' : 'inherit'}>
+                                                                    {project.metrics?.alerts || 0}
+                                                                </Typography>
+                                                            </Box>
+                                                        </Grid>
+                                                    </Grid>
                                                 </CardContent>
                                             </Card>
                                         </Grid>

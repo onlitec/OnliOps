@@ -13,6 +13,11 @@ interface Project {
     name: string
     description?: string
     status: string
+    metrics?: {
+        devices: number
+        alerts: number
+        lastActivity?: string
+    }
 }
 
 interface ProjectState {
