@@ -210,7 +210,7 @@ export default function GlobalDashboard() {
                                 <ClientDetailedCard
                                     client={client}
                                     selected={selectedClientId === client.id}
-                                    onClick={() => navigate(`/client/${client.id}`)}
+                                    onClick={() => setSelectedClientId(selectedClientId === client.id ? null : client.id)}
                                 />
                             </Grid>
                         ))}

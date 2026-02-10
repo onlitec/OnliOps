@@ -1,5 +1,21 @@
-import React from 'react'
-import { Eye, Edit, Trash2, Wifi, WifiOff, ArrowUp, ArrowDown, ChevronUp, ChevronDown } from 'lucide-react'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    Typography,
+    Box,
+    IconButton,
+    Tooltip,
+    alpha,
+    useTheme,
+    Chip,
+    Avatar
+} from '@mui/material'
+import { Eye, Edit, Trash2, ChevronUp, ChevronDown, HardDrive, Monitor, Cpu } from 'lucide-react'
 import { NetworkDevice } from '../../lib/supabase'
 import { api } from '../../services/api'
 
@@ -22,6 +38,8 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
     sortConfig,
     onSort
 }) => {
+    const theme = useTheme()
+
     const handleDelete = async (device: NetworkDevice) => {
         if (!confirm(`Tem certeza que deseja excluir o dispositivo ${device.hostname || device.ip_address}?`)) {
             return
@@ -62,134 +80,194 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
         return labels[type] || type
     }
 
-    const getStatusBadge = (status: string) => {
-        const styles: Record<string, string> = {
-            active: 'bg-green-100 text-green-800',
-            inactive: 'bg-gray-100 text-gray-800',
-            maintenance: 'bg-yellow-100 text-yellow-800',
-            error: 'bg-red-100 text-red-800'
+    const getStatusConfig = (status: string) => {
+        const configs: Record<string, { color: string, label: string }> = {
+            active: { color: '#22c55e', label: 'Online' },
+            inactive: { color: '#94a3b8', label: 'Offline' },
+            maintenance: { color: '#f59e0b', label: 'Manutenção' },
+            error: { color: '#ef4444', label: 'Erro' }
         }
-        const labels: Record<string, string> = {
-            active: 'Ativo',
-            inactive: 'Inativo',
-            maintenance: 'Manutenção',
-            error: 'Erro'
-        }
-        return (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || styles.inactive}`}>
-                {labels[status] || status}
-            </span>
-        )
+        return configs[status] || configs.inactive
     }
 
     if (loading) {
         return (
-            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-600 mt-4">Carregando dispositivos...</p>
-            </div>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8 }}>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <Typography sx={{ mt: 2, color: 'text.secondary' }}>Carregando dispositivos...</Typography>
+            </Box>
         )
     }
 
     if (devices.length === 0) {
         return (
-            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <p className="text-gray-600">Nenhum dispositivo encontrado</p>
-            </div>
+            <Paper elevation={0} sx={{ p: 8, textAlign: 'center', borderRadius: 4, bgcolor: alpha(theme.palette.background.paper, 0.5), border: '1px solid', borderColor: alpha(theme.palette.divider, 0.08) }}>
+                <Typography color="text.secondary">Nenhum dispositivo encontrado</Typography>
+            </Paper>
         )
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            {[
-                                { key: 'serial_number', label: 'Serial' },
-                                { key: 'ip_address', label: 'IP / Hostname' },
-                                { key: 'device_type', label: 'Tipo' },
-                                { key: 'model', label: 'Modelo' },
-                                { key: 'manufacturer', label: 'Fabricante' },
-                                { key: 'location', label: 'Localização' },
-                                { key: 'status', label: 'Status' }
-                            ].map((col) => (
-                                <th
-                                    key={col.key}
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                                    onClick={() => onSort(col.key)}
-                                >
-                                    <div className="flex items-center gap-1">
-                                        {col.label}
-                                        {sortConfig.key === col.key && (
-                                            sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-                                        )}
-                                    </div>
-                                </th>
-                            ))}
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Ações
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {devices.map((device) => (
-                            <tr key={device.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {device.serial_number || '-'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">{device.ip_address}</div>
-                                    {device.hostname && (
-                                        <div className="text-sm text-gray-500">{device.hostname}</div>
+        <TableContainer
+            component={Paper}
+            elevation={0}
+            sx={{
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: alpha(theme.palette.divider, 0.08),
+                bgcolor: alpha(theme.palette.background.paper, 0.8),
+                backdropFilter: 'blur(12px)',
+                overflow: 'hidden'
+            }}
+        >
+            <Table sx={{ minWidth: 650 }}>
+                <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.03) }}>
+                    <TableRow>
+                        {[
+                            { key: 'ip_address', label: 'Equipamento' },
+                            { key: 'serial_number', label: 'N/S' },
+                            { key: 'device_type', label: 'Tipo' },
+                            { key: 'model', label: 'Especificação' },
+                            { key: 'location', label: 'Ambiente' },
+                            { key: 'status', label: 'Status' }
+                        ].map((col) => (
+                            <TableCell
+                                key={col.key}
+                                onClick={() => onSort(col.key)}
+                                sx={{
+                                    py: 2,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    color: 'text.secondary',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    cursor: 'pointer',
+                                    '&:hover': { color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.02) }
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    {col.label}
+                                    {sortConfig.key === col.key && (
+                                        sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                                     )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {getDeviceTypeLabel(device.device_type)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {device.model}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {device.manufacturer}
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-900">
-                                    {device.location || '-'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    {getStatusBadge(device.status)}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <button
-                                            onClick={() => onView(device)}
-                                            className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                                            title="Visualizar"
-                                        >
-                                            <Eye size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => onEdit(device)}
-                                            className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                                            title="Editar"
-                                        >
-                                            <Edit size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(device)}
-                                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                                            title="Excluir"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                                </Box>
+                            </TableCell>
                         ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                        <TableCell align="right" sx={{ py: 2, fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase' }}>
+                            Ações
+                        </TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {devices.map((device) => {
+                        const { color, label } = getStatusConfig(device.status)
+                        return (
+                            <TableRow
+                                key={device.id}
+                                sx={{
+                                    '&:hover': {
+                                        bgcolor: alpha(theme.palette.primary.main, 0.01),
+                                        '& .row-actions': { opacity: 1 }
+                                    },
+                                    transition: 'all 0.2s ease'
+                                }}
+                            >
+                                <TableCell sx={{ py: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Avatar sx={{
+                                            width: 40,
+                                            height: 40,
+                                            bgcolor: alpha(color, 0.1),
+                                            color: color,
+                                            borderRadius: 2.5
+                                        }}>
+                                            {device.device_type === 'camera' ? <Eye size={20} /> :
+                                                device.device_type === 'switch' ? <Cpu size={20} /> :
+                                                    <HardDrive size={20} />}
+                                        </Avatar>
+                                        <Box>
+                                            <Typography variant="body2" fontWeight={700} color="text.primary">
+                                                {device.hostname || device.ip_address}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {device.ip_address}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                </TableCell>
+                                <TableCell sx={{ py: 2 }}>
+                                    <Typography variant="body2" fontWeight={500} color="text.secondary">
+                                        {device.serial_number || '-'}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell sx={{ py: 2 }}>
+                                    <Chip
+                                        label={getDeviceTypeLabel(device.device_type)}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                            borderRadius: 1.5,
+                                            height: 24,
+                                            fontSize: '0.7rem',
+                                            fontWeight: 500,
+                                            borderColor: alpha(theme.palette.divider, 0.1)
+                                        }}
+                                    />
+                                </TableCell>
+                                <TableCell sx={{ py: 2 }}>
+                                    <Box>
+                                        <Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 200 }}>
+                                            {device.model}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {device.manufacturer}
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell sx={{ py: 2 }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {device.location || 'Não definido'}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell sx={{ py: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color }} />
+                                        <Typography variant="caption" fontWeight={600} color={color}>
+                                            {label}
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell align="right" sx={{ py: 2 }}>
+                                    <Box className="row-actions" sx={{
+                                        display: 'flex',
+                                        justifyContent: 'flex-end',
+                                        gap: 0.5,
+                                        opacity: 0.6,
+                                        transition: 'opacity 0.2s'
+                                    }}>
+                                        <Tooltip title="Visualizar">
+                                            <IconButton size="small" onClick={() => onView(device)} sx={{ color: 'info.main', '&:hover': { bgcolor: alpha(theme.palette.info.main, 0.1) } }}>
+                                                <Eye size={18} />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Editar">
+                                            <IconButton size="small" onClick={() => onEdit(device)} sx={{ color: 'success.main', '&:hover': { bgcolor: alpha(theme.palette.success.main, 0.1) } }}>
+                                                <Edit size={18} />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Excluir">
+                                            <IconButton size="small" onClick={() => handleDelete(device)} sx={{ color: 'error.main', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) } }}>
+                                                <Trash2 size={18} />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                </TableCell>
+                            </TableRow>
+                        )
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
     )
 }
 

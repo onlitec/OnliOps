@@ -25,7 +25,7 @@ const getAuthHeaders = () => {
 export const api = {
     // === Multi-Tenancy ===
     getClients: async (): Promise<any[]> => {
-        const response = await fetch(`${API_BASE}/clients`)
+        const response = await fetch(`${API_BASE}/clients`, { headers: getAuthHeaders() })
         if (!response.ok) throw new Error('Failed to fetch clients')
         return response.json()
     },
@@ -37,6 +37,16 @@ export const api = {
             body: JSON.stringify(data)
         })
         if (!response.ok) throw new Error('Failed to create client')
+        return response.json()
+    },
+    
+    updateClient: async (id: string, data: any): Promise<any> => {
+        const response = await fetch(`${API_BASE}/clients/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        if (!response.ok) throw new Error('Failed to update client')
         return response.json()
     },
 
@@ -209,6 +219,14 @@ export const api = {
     // List devices
     getDevices: async (): Promise<NetworkDevice[]> => {
         const response = await fetch(`${API_BASE}/network_devices`, { headers: getAuthHeaders() })
+        if (!response.ok) throw new Error('Failed to fetch devices')
+        return response.json()
+    },
+
+    // List devices for a specific project (explicit project ID)
+    getDevicesByProject: async (projectId: string): Promise<NetworkDevice[]> => {
+        const headers: Record<string, string> = { 'X-Project-ID': projectId }
+        const response = await fetch(`${API_BASE}/network_devices`, { headers })
         if (!response.ok) throw new Error('Failed to fetch devices')
         return response.json()
     },

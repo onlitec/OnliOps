@@ -229,6 +229,23 @@ app.post('/api/clients', async (req, res) => {
     }
 });
 
+app.put('/api/clients/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, logo_url } = req.body;
+    try {
+        const { rows } = await pool.query(
+            'UPDATE clients SET name = $1, logo_url = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
+            [name, logo_url, id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+        res.json(rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Delete Client (with cascade delete of projects and related data)
 app.delete('/api/clients/:id', async (req, res) => {
     const { id } = req.params;
@@ -519,7 +536,7 @@ app.get('/api/platform/metrics', async (req, res) => {
             pool.query('SELECT COUNT(*) FROM clients'),
             pool.query('SELECT COUNT(*) FROM projects'),
             pool.query('SELECT COUNT(*) FROM network_devices'),
-            pool.query('SELECT COUNT(*) FROM alerts WHERE status = $1', ['active']),
+            pool.query('SELECT COUNT(*) FROM alerts WHERE is_resolved = false'),
             pool.query('SELECT COUNT(*) FROM project_integrations')
         ]);
 
@@ -709,10 +726,11 @@ app.delete('/api/vlans/:id', async (req, res) => {
 // Endpoint para listar dispositivos
 app.get('/api/network_devices', async (req, res) => {
     try {
+        console.log(`[API] Fetching devices for project: ${req.projectId}`);
         const { rows } = await pool.query(`
             SELECT nd.*, v.name as vlan_name, v.vlan_id as vlan_number, dc.name as category_name
             FROM network_devices nd
-            LEFT JOIN vlans v ON nd.vlan_id = v.id
+            LEFT JOIN vlans v ON nd.vlan_id = v.vlan_id
             LEFT JOIN device_categories dc ON nd.category_id = dc.id
             WHERE nd.project_id = $1
             ORDER BY nd.created_at DESC

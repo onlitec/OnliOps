@@ -1,5 +1,24 @@
 import React, { useState, useEffect } from 'react'
-import { X, Loader } from 'lucide-react'
+import {
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    TextField,
+    Grid,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Box,
+    Typography,
+    IconButton,
+    CircularProgress,
+    alpha,
+    useTheme,
+    Divider
+} from '@mui/material'
+import { X, Save, HardDrive, Info, Settings, MapPin, Shield } from 'lucide-react'
 import { NetworkDevice } from '../../lib/supabase'
 import { api } from '../../services/api'
 
@@ -9,6 +28,7 @@ interface InventoryFormProps {
 }
 
 const InventoryForm: React.FC<InventoryFormProps> = ({ device, onClose }) => {
+    const theme = useTheme()
     const [loading, setLoading] = useState(false)
     const [nvrs, setNvrs] = useState<NetworkDevice[]>([])
     const [vlans, setVlans] = useState<any[]>([])
@@ -72,7 +92,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ device, onClose }) => {
         }
     }
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: any) => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
     }
@@ -112,326 +132,343 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ device, onClose }) => {
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                        {device ? 'Editar Dispositivo' : 'Adicionar Dispositivo'}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                        <X size={24} />
-                    </button>
-                </div>
+        <Box component="form" onSubmit={handleSubmit}>
+            <DialogTitle sx={{
+                p: 3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '1px solid',
+                borderColor: alpha(theme.palette.divider, 0.08)
+            }}>
+                <Box display="flex" alignItems="center" gap={1.5}>
+                    <Box sx={{
+                        p: 1,
+                        borderRadius: 2,
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: theme.palette.primary.main,
+                        display: 'flex'
+                    }}>
+                        <HardDrive size={24} />
+                    </Box>
+                    <Box>
+                        <Typography variant="h6" fontWeight={700}>
+                            {device ? 'Editar Dispositivo' : 'Adicionar Novo Dispositivo'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {device ? 'Atualize as informações do equipamento' : 'Cadastre um novo equipamento na rede'}
+                        </Typography>
+                    </Box>
+                </Box>
+                <IconButton onClick={onClose} size="small">
+                    <X size={20} />
+                </IconButton>
+            </DialogTitle>
 
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Device Type */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Tipo de Dispositivo <span className="text-red-500">*</span>
-                            </label>
-                            <select
+            <DialogContent sx={{ p: 3, bgcolor: alpha(theme.palette.background.default, 0.3) }}>
+                <Grid container spacing={3} sx={{ mt: 0.5 }}>
+                    {/* Seção: Informações Básicas */}
+                    <Grid size={{ xs: 12 }}>
+                        <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                            <Info size={16} color={theme.palette.primary.main} />
+                            <Typography variant="subtitle2" fontWeight={700} color="primary">
+                                Informações Básicas
+                            </Typography>
+                        </Box>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Tipo de Dispositivo *</InputLabel>
+                            <Select
                                 name="device_type"
                                 value={formData.device_type}
                                 onChange={handleChange}
+                                label="Tipo de Dispositivo *"
                                 required
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
                                 {categories.map(cat => (
-                                    <option key={cat.slug} value={cat.slug}>{cat.name}</option>
+                                    <MenuItem key={cat.slug} value={cat.slug}>{cat.name}</MenuItem>
                                 ))}
-                                {/* Fallback or 'Other' if needed manually, though categories should cover it */}
-                                {!categories.find(c => c.slug === 'other') && <option value="other">Outro</option>}
-                            </select>
-                        </div>
+                                {!categories.find(c => c.slug === 'other') && <MenuItem value="other">Outro</MenuItem>}
+                            </Select>
+                        </FormControl>
+                    </Grid>
 
-                        {/* Serial Number */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Número de Série <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="serial_number"
-                                value={formData.serial_number}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Número de Série *"
+                            name="serial_number"
+                            value={formData.serial_number}
+                            onChange={handleChange}
+                            required
+                        />
+                    </Grid>
 
-                        {/* IP Address */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Endereço IP <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="ip_address"
-                                value={formData.ip_address}
-                                onChange={handleChange}
-                                required
-                                placeholder="192.168.1.100"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Endereço IP *"
+                            name="ip_address"
+                            value={formData.ip_address}
+                            onChange={handleChange}
+                            required
+                            placeholder="192.168.1.100"
+                        />
+                    </Grid>
 
-                        {/* MAC Address */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                MAC Address
-                            </label>
-                            <input
-                                type="text"
-                                name="mac_address"
-                                value={formData.mac_address}
-                                onChange={handleChange}
-                                placeholder="00:11:22:33:44:55"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="MAC Address"
+                            name="mac_address"
+                            value={formData.mac_address}
+                            onChange={handleChange}
+                            placeholder="00:11:22:33:44:55"
+                        />
+                    </Grid>
 
-                        {/* Model */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Modelo <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="model"
-                                value={formData.model}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Modelo *"
+                            name="model"
+                            value={formData.model}
+                            onChange={handleChange}
+                            required
+                        />
+                    </Grid>
 
-                        {/* Manufacturer */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Fabricante
-                            </label>
-                            <input
-                                type="text"
-                                name="manufacturer"
-                                value={formData.manufacturer}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Fabricante"
+                            name="manufacturer"
+                            value={formData.manufacturer}
+                            onChange={handleChange}
+                        />
+                    </Grid>
 
-                        {/* Hostname */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Nome Amigável / Hostname
-                            </label>
-                            <input
-                                type="text"
-                                name="hostname"
-                                value={formData.hostname}
-                                onChange={handleChange}
-                                placeholder="CAM-ENTRADA-01"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12 }}>
+                        <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+                    </Grid>
 
-                        {/* Firmware */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Versão do Firmware
-                            </label>
-                            <input
-                                type="text"
-                                name="firmware_version"
-                                value={formData.firmware_version}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    {/* Seção: Configuração e Identificação */}
+                    <Grid size={{ xs: 12 }}>
+                        <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                            <Settings size={16} color={theme.palette.primary.main} />
+                            <Typography variant="subtitle2" fontWeight={700} color="primary">
+                                Configuração e Identificação
+                            </Typography>
+                        </Box>
+                    </Grid>
 
-                        {/* Location */}
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Localização Física Detalhada
-                            </label>
-                            <input
-                                type="text"
-                                name="location"
-                                value={formData.location}
-                                onChange={handleChange}
-                                placeholder="Torre A, 3º andar, Hall dos elevadores"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Hostname / Nome Amigável"
+                            name="hostname"
+                            value={formData.hostname}
+                            onChange={handleChange}
+                            placeholder="Ex: CAM-ENTRADA-01"
+                        />
+                    </Grid>
 
-                        {/* Patch Panel */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Patch Panel
-                            </label>
-                            <input
-                                type="text"
-                                name="patch_panel"
-                                value={formData.patch_panel}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Versão do Firmware"
+                            name="firmware_version"
+                            value={formData.firmware_version}
+                            onChange={handleChange}
+                        />
+                    </Grid>
 
-                        {/* Patch Panel Port */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Porta do Patch Panel
-                            </label>
-                            <input
-                                type="text"
-                                name="patch_panel_port"
-                                value={formData.patch_panel_port}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    {/* Infraestrutura de Rede */}
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Patch Panel"
+                            name="patch_panel"
+                            value={formData.patch_panel}
+                            onChange={handleChange}
+                        />
+                    </Grid>
 
-                        {/* Switch Port */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Porta do Switch
-                            </label>
-                            <input
-                                type="text"
-                                name="switch_port"
-                                value={formData.switch_port}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Porta P. Panel"
+                            name="patch_panel_port"
+                            value={formData.patch_panel_port}
+                            onChange={handleChange}
+                        />
+                    </Grid>
 
-                        {/* Connected NVR (only for cameras) */}
-                        {formData.device_type === 'camera' && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    NVR Conectado
-                                </label>
-                                <select
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Porta do Switch"
+                            name="switch_port"
+                            value={formData.switch_port}
+                            onChange={handleChange}
+                        />
+                    </Grid>
+
+                    {formData.device_type === 'camera' && (
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>NVR Conectado</InputLabel>
+                                <Select
                                     name="connected_nvr_id"
                                     value={formData.connected_nvr_id}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    label="NVR Conectado"
                                 >
-                                    <option value="">Nenhum</option>
+                                    <MenuItem value="">Nenhum</MenuItem>
                                     {nvrs.map(nvr => (
-                                        <option key={nvr.id} value={nvr.id}>
+                                        <MenuItem key={nvr.id} value={nvr.id}>
                                             {nvr.hostname || nvr.ip_address} - {nvr.model}
-                                        </option>
+                                        </MenuItem>
                                     ))}
-                                </select>
-                            </div>
-                        )}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    )}
 
-                        {/* VLAN */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                VLAN
-                            </label>
-                            <select
+                    <Grid size={{ xs: 12, md: formData.device_type === 'camera' ? 6 : 12 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>VLAN</InputLabel>
+                            <Select
                                 name="vlan_id"
                                 value={formData.vlan_id}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                label="VLAN"
                             >
-                                <option value="">Nenhuma</option>
+                                <MenuItem value="">Nenhuma</MenuItem>
                                 {vlans.map(vlan => (
-                                    <option key={vlan.vlan_id} value={vlan.vlan_id}>
+                                    <MenuItem key={vlan.vlan_id} value={vlan.vlan_id}>
                                         VLAN {vlan.vlan_id} - {vlan.name}
-                                    </option>
+                                    </MenuItem>
                                 ))}
-                            </select>
-                        </div>
+                            </Select>
+                        </FormControl>
+                    </Grid>
 
-                        {/* Status */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Status
-                            </label>
-                            <select
-                                name="status"
-                                value={formData.status}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value="active">Ativo</option>
-                                <option value="inactive">Inativo</option>
-                                <option value="maintenance">Manutenção</option>
-                                <option value="error">Erro</option>
-                            </select>
-                        </div>
+                    <Grid size={{ xs: 12 }}>
+                        <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+                    </Grid>
 
-                        {/* Admin Username */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Usuário Admin
-                            </label>
-                            <input
-                                type="text"
-                                name="admin_username"
-                                value={formData.admin_username}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    {/* Seção: Localização e Status */}
+                    <Grid size={{ xs: 12, md: 8 }}>
+                        <Box display="flex" alignItems="center" gap={1} mb={1.5}>
+                            <MapPin size={16} color={theme.palette.primary.main} />
+                            <Typography variant="subtitle2" fontWeight={700} color="primary">
+                                Localização e Observações
+                            </Typography>
+                        </Box>
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 12 }}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Localização Física Detalhada"
+                                    name="location"
+                                    value={formData.location}
+                                    onChange={handleChange}
+                                    placeholder="Ex: Torre A, 3º andar, Hall"
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 12 }}>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={3}
+                                    label="Observações"
+                                    name="notes"
+                                    value={formData.notes}
+                                    onChange={handleChange}
+                                />
+                            </Grid>
+                        </Grid>
+                    </Grid>
 
-                        {/* Admin Password */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Senha Admin
-                            </label>
-                            <input
-                                type="password"
-                                name="admin_password_enc"
-                                value={formData.admin_password_enc}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <Box display="flex" alignItems="center" gap={1} mb={1.5}>
+                            <Shield size={16} color={theme.palette.primary.main} />
+                            <Typography variant="subtitle2" fontWeight={700} color="primary">
+                                Status e Segurança
+                            </Typography>
+                        </Box>
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 12 }}>
+                                <FormControl fullWidth size="small">
+                                    <InputLabel>Status</InputLabel>
+                                    <Select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleChange}
+                                        label="Status"
+                                    >
+                                        <MenuItem value="active">Ativo</MenuItem>
+                                        <MenuItem value="inactive">Inativo</MenuItem>
+                                        <MenuItem value="maintenance">Manutenção</MenuItem>
+                                        <MenuItem value="error">Erro</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid size={{ xs: 12 }}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    label="Usuário Admin"
+                                    name="admin_username"
+                                    value={formData.admin_username}
+                                    onChange={handleChange}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 12 }}>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    type="password"
+                                    label="Senha Admin"
+                                    name="admin_password_enc"
+                                    value={formData.admin_password_enc}
+                                    onChange={handleChange}
+                                />
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </DialogContent>
 
-                        {/* Notes */}
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Observações
-                            </label>
-                            <textarea
-                                name="notes"
-                                value={formData.notes}
-                                onChange={handleChange}
-                                rows={4}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                        </div>
-                    </div>
-                </form>
-
-                <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                        {loading && <Loader className="animate-spin" size={18} />}
-                        {device ? 'Atualizar' : 'Criar'} Dispositivo
-                    </button>
-                </div>
-            </div>
-        </div>
+            <DialogActions sx={{ p: 3, borderTop: '1px solid', borderColor: alpha(theme.palette.divider, 0.08) }}>
+                <Button onClick={onClose} variant="outlined" color="inherit" sx={{ borderRadius: 2 }}>
+                    Cancelar
+                </Button>
+                <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Save size={18} />}
+                    sx={{ borderRadius: 2, px: 4 }}
+                >
+                    {device ? 'Salvar Alterações' : 'Cadastrar Dispositivo'}
+                </Button>
+            </DialogActions>
+        </Box>
     )
 }
 

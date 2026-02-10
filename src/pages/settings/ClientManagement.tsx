@@ -28,6 +28,7 @@ import {
 } from '@mui/material'
 import {
     Delete as DeleteIcon,
+    Edit as EditIcon,
     Business as BusinessIcon,
     Layers as ProjectIcon,
     Devices as DeviceIcon,
@@ -60,6 +61,12 @@ export default function ClientManagement() {
     const [confirmName, setConfirmName] = useState('')
     const [confirmCheck, setConfirmCheck] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+
+    // Edit Dialog
+    const [editDialogOpen, setEditDialogOpen] = useState(false)
+    const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
+    const [editName, setEditName] = useState('')
+    const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
         loadData()
@@ -117,6 +124,29 @@ export default function ClientManagement() {
             setError(err.message || 'Erro ao excluir cliente')
         } finally {
             setIsDeleting(false)
+        }
+    }
+
+    const handleEditClick = (client: Client) => {
+        setClientToEdit(client)
+        setEditName(client.name)
+        setEditDialogOpen(true)
+    }
+
+    const handleSaveEdit = async () => {
+        if (!clientToEdit || !editName.trim()) return
+
+        setIsSaving(true)
+        try {
+            await api.updateClient(clientToEdit.id, { name: editName.trim() })
+            setEditDialogOpen(false)
+            setClientToEdit(null)
+            setEditName('')
+            loadData()
+        } catch (err: any) {
+            setError(err.message || 'Erro ao atualizar cliente')
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -203,18 +233,29 @@ export default function ClientManagement() {
                                             />
                                         </TableCell>
                                         <TableCell align="right">
-                                            <Tooltip title={isAdmin ? "Excluir Cliente" : "Apenas Admin"}>
-                                                <span>
+                                            <Box display="flex" justifyContent="flex-end" gap={1}>
+                                                <Tooltip title="Editar Cliente">
                                                     <IconButton
-                                                        onClick={() => handleDeleteClick(client)}
+                                                        onClick={() => handleEditClick(client)}
                                                         size="small"
-                                                        color="error"
-                                                        disabled={!isAdmin}
+                                                        color="primary"
                                                     >
-                                                        <DeleteIcon />
+                                                        <EditIcon />
                                                     </IconButton>
-                                                </span>
-                                            </Tooltip>
+                                                </Tooltip>
+                                                <Tooltip title={isAdmin ? "Excluir Cliente" : "Apenas Admin"}>
+                                                    <span>
+                                                        <IconButton
+                                                            onClick={() => handleDeleteClick(client)}
+                                                            size="small"
+                                                            color="error"
+                                                            disabled={!isAdmin}
+                                                        >
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                            </Box>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -310,6 +351,52 @@ export default function ClientManagement() {
                         }}
                     >
                         {isDeleting ? 'Excluindo...' : 'Sim, Excluir Cadastro'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Edit Client Dialog */}
+            <Dialog
+                open={editDialogOpen}
+                onClose={() => !isSaving && setEditDialogOpen(false)}
+                PaperProps={{
+                    sx: { borderRadius: 3, p: 1, minWidth: '400px' }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 700 }}>
+                    Editar Cliente
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                        Altere o nome do cadastro do cliente
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        label="Nome do Cliente"
+                        variant="outlined"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        disabled={isSaving}
+                        autoFocus
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        onClick={() => setEditDialogOpen(false)}
+                        disabled={isSaving}
+                        sx={{ color: 'text.secondary', textTransform: 'none' }}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleSaveEdit}
+                        variant="contained"
+                        disabled={isSaving || !editName.trim() || editName === clientToEdit?.name}
+                        startIcon={isSaving ? <CircularProgress size={18} color="inherit" /> : null}
+                        sx={{ borderRadius: 2, px: 3, textTransform: 'none', fontWeight: 600 }}
+                    >
+                        {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </Button>
                 </DialogActions>
             </Dialog>

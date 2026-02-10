@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Search, Filter, Download, Upload, Sparkles, ChevronDown } from 'lucide-react'
+import { Plus, Search, Filter, Download, Upload, Sparkles, ChevronDown, Briefcase, Folder, Building2, FolderOpen, ChevronRight, Users, HardDrive, Eye, Edit } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { NetworkDevice } from '../lib/supabase'
 import { api } from '../services/api'
@@ -17,20 +17,30 @@ import {
     Typography,
     Grid,
     Card,
-    CardActionArea,
+    CardContent,
     Button,
     useTheme,
-    CircularProgress,
     Divider,
     FormControl,
     InputLabel,
     Select,
-    SelectChangeEvent
+    SelectChangeEvent,
+    TextField,
+    Breadcrumbs,
+    Link,
+    Paper,
+    Fade,
+    CircularProgress,
+    Stack,
+    alpha,
+    Chip,
+    Dialog
 } from '@mui/material'
 import {
-    Business as BusinessIcon,
+    NavigateNext,
+    Home as HomeIcon,
     ChevronRight as ChevronRightIcon,
-    ArrowBack as ArrowBackIcon,
+    Business as BusinessIcon,
     Dashboard as DashboardIcon
 } from '@mui/icons-material'
 import { useAppDispatch, useAppSelector } from '../hooks/useApp'
@@ -40,17 +50,20 @@ interface DeviceListProps {
     categoryOverride?: string
 }
 
+type SelectionStep = 'client' | 'project' | 'devices'
+
 export default function DeviceList({ categoryOverride }: DeviceListProps) {
     const navigate = useNavigate()
     const theme = useTheme()
     const dispatch = useAppDispatch()
-    const { currentClient, currentProject, clients, projects } = useAppSelector((state) => state.project)
+    const { currentClient, currentProject, clients, projects, loading: projectLoading } = useAppSelector((state) => state.project)
 
     const [devices, setDevices] = useState<NetworkDevice[]>([])
     const [filteredDevices, setFilteredDevices] = useState<NetworkDevice[]>([])
     const [categories, setCategories] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
+    const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid')
     const [showForm, setShowForm] = useState(false)
     const [selectedDevice, setSelectedDevice] = useState<NetworkDevice | null>(null)
     const [showDetails, setShowDetails] = useState(false)
@@ -66,6 +79,9 @@ export default function DeviceList({ categoryOverride }: DeviceListProps) {
     const { category: urlCategory } = useParams()
     const category = categoryOverride || urlCategory
 
+    // Selection step
+    const [step, setStep] = useState<SelectionStep>('client')
+
     // Filters
     const [filterManufacturer, setFilterManufacturer] = useState<string>('all')
     const [filterLocation, setFilterLocation] = useState<string>('all')
@@ -77,28 +93,41 @@ export default function DeviceList({ categoryOverride }: DeviceListProps) {
     }, [dispatch, clients.length, categoryOverride])
 
     useEffect(() => {
-        if (!categoryOverride && currentClient && projects.length === 0) {
+        if (currentClient && step === 'project') {
             dispatch(fetchClientProjects(currentClient.id))
         }
-    }, [dispatch, currentClient, projects.length, categoryOverride])
+    }, [dispatch, currentClient, step])
+
+    // Determine current step based on global state
+    useEffect(() => {
+        if (categoryOverride) {
+            setStep('devices')
+        } else if (currentProject && currentClient) {
+            setStep('devices')
+        } else if (currentClient) {
+            setStep('project')
+        } else {
+            setStep('client')
+        }
+    }, [currentClient, currentProject, categoryOverride])
 
     useEffect(() => {
-        if (categoryOverride || (currentClient && currentProject)) {
-            loadData()
-        } else if (!categoryOverride) {
-            setLoading(false)
+        if (step === 'devices' && currentProject) {
+            loadData(currentProject.id)
         }
-    }, [categoryOverride, currentClient, currentProject])
+    }, [step, currentProject])
 
     useEffect(() => {
         applyFilters()
     }, [devices, categories, searchTerm, filterManufacturer, filterLocation, category, sortConfig])
 
-    const loadData = async () => {
+    const loadData = async (projectId?: string) => {
         setLoading(true)
         try {
+            const pid = projectId || currentProject?.id || localStorage.getItem('currentProjectId') || ''
+            console.log('[DeviceList] Loading devices for project:', pid)
             const [devs, cats] = await Promise.all([
-                api.getDevices(),
+                api.getDevicesByProject(pid),
                 api.getCategories()
             ])
             setDevices(devs || [])
@@ -243,189 +272,605 @@ export default function DeviceList({ categoryOverride }: DeviceListProps) {
 
     const handleClientSelect = (client: any) => {
         dispatch(setCurrentClient(client))
-        dispatch(fetchClientProjects(client.id))
+        dispatch(setCurrentProject(null))
+        setStep('project')
     }
 
     const handleProjectSelect = (project: any) => {
         dispatch(setCurrentProject(project))
+        setStep('devices')
     }
 
-    const handleClientChange = (clientId: string) => {
-        const client = clients.find(c => c.id === clientId) || null
-        dispatch(setCurrentClient(client))
-        // fetchClientProjects is already handled in projectSlice or we can trigger it here
-        if (client) dispatch(fetchClientProjects(client.id))
+    const resetSelection = () => {
+        dispatch(setCurrentClient(null))
         dispatch(setCurrentProject(null))
-    }
-
-    const handleProjectChange = (projectId: string) => {
-        const project = projects.find(p => p.id === projectId) || null
-        dispatch(setCurrentProject(project))
+        setStep('client')
     }
 
     return (
-        <div className="p-6 space-y-6">
-            {!categoryOverride && (
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">{getTitle()}</h1>
-                        <Box display="flex" gap={2} alignItems="center">
-                            <FormControl size="small" sx={{ minWidth: 200 }}>
-                                <InputLabel>Cliente</InputLabel>
-                                <Select
-                                    value={currentClient?.id || ''}
-                                    label="Cliente"
-                                    onChange={(e: SelectChangeEvent) => handleClientChange(e.target.value)}
-                                >
-                                    {clients.map(c => (
-                                        <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+        <Box sx={{ p: 4 }}>
+            {/* Breadcrumbs for easier navigation */}
+            <Box sx={{ mb: 4 }}>
+                <Breadcrumbs separator={<NavigateNext fontSize="small" />} aria-label="breadcrumb">
+                    <Link
+                        underline="hover"
+                        sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', cursor: 'pointer' }}
+                        onClick={resetSelection}
+                    >
+                        <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+                        Início
+                    </Link>
+                    {currentClient && (
+                        <Link
+                            underline="hover"
+                            sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', cursor: 'pointer' }}
+                            onClick={() => { dispatch(setCurrentProject(null)); setStep('project'); }}
+                        >
+                            {currentClient.name}
+                        </Link>
+                    )}
+                    {currentProject && (
+                        <Typography color="text.primary" fontWeight={600}>
+                            {currentProject.name}
+                        </Typography>
+                    )}
+                </Breadcrumbs>
 
-                            {currentClient && (
-                                <FormControl size="small" sx={{ minWidth: 200 }}>
-                                    <InputLabel>Projeto</InputLabel>
-                                    <Select
-                                        value={currentProject?.id || ''}
-                                        label="Projeto"
-                                        onChange={(e: SelectChangeEvent) => handleProjectChange(e.target.value)}
-                                    >
-                                        {projects.map(p => (
-                                            <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            )}
-                        </Box>
-                    </div>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={(e) => setImportMenuAnchor(e.currentTarget)}
-                            className="flex items-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                        >
-                            <Upload size={20} />
-                            Importar
-                            <ChevronDown size={16} />
-                        </button>
-                        <Menu
-                            anchorEl={importMenuAnchor}
-                            open={Boolean(importMenuAnchor)}
-                            onClose={() => setImportMenuAnchor(null)}
-                        >
-                            <MenuItem onClick={() => { setImportMenuAnchor(null); setShowSmartImport(true); }}>
-                                <ListItemIcon><Sparkles size={18} className="text-purple-600" /></ListItemIcon>
-                                <ListItemText
-                                    primary="Importação Inteligente"
-                                    secondary="Com categorização via IA"
-                                />
-                            </MenuItem>
-                            <MenuItem onClick={() => { setImportMenuAnchor(null); setShowImport(true); }}>
-                                <ListItemIcon><Upload size={18} /></ListItemIcon>
-                                <ListItemText
-                                    primary="Importação Básica"
-                                    secondary="Planilha SADP tradicional"
-                                />
-                            </MenuItem>
-                        </Menu>
-                        <button
-                            onClick={handleAddDevice}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            <Plus size={20} />
-                            Adicionar Dispositivo
-                        </button>
-                    </div>
-                </div>
+                <Box mt={2}>
+                    <Typography variant="h4" fontWeight={700}>
+                        {step === 'client' && 'Selecione o Cliente'}
+                        {step === 'project' && `Projetos de ${currentClient?.name}`}
+                        {step === 'devices' && getTitle()}
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary">
+                        {step === 'client' && 'Escolha um cliente para visualizar seus projetos e dispositivos.'}
+                        {step === 'project' && 'Selecione um projeto para listar os dispositivos cadastrados.'}
+                        {step === 'devices' && `Visualizando infraestrutura de ${currentProject?.name}`}
+                    </Typography>
+                </Box>
+            </Box>
+
+            {/* Step 1: Client Selection */}
+            {step === 'client' && (
+                <Fade in={true}>
+                    <Box>
+                        {projectLoading && clients.length === 0 ? (
+                            <Box display="flex" justifyContent="center" py={8}>
+                                <CircularProgress />
+                            </Box>
+                        ) : (
+                            <Grid container spacing={3}>
+                                {clients.map((client, index) => {
+                                    const gradients = [
+                                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                                        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                                        'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+                                        'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
+                                        'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
+                                    ]
+                                    const gradient = gradients[index % gradients.length]
+                                    return (
+                                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={client.id}>
+                                            <Card
+                                                elevation={0}
+                                                sx={{
+                                                    borderRadius: 4,
+                                                    overflow: 'hidden',
+                                                    cursor: 'pointer',
+                                                    position: 'relative',
+                                                    border: '1px solid',
+                                                    borderColor: alpha(theme.palette.divider, 0.08),
+                                                    bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                                    backdropFilter: 'blur(12px)',
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-6px)',
+                                                        boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                                        borderColor: alpha(theme.palette.primary.main, 0.3),
+                                                        '& .card-gradient': {
+                                                            height: 6,
+                                                        },
+                                                        '& .card-arrow': {
+                                                            opacity: 1,
+                                                            transform: 'translateX(0)',
+                                                        },
+                                                        '& .card-icon': {
+                                                            transform: 'scale(1.1) rotate(-5deg)',
+                                                        },
+                                                    }
+                                                }}
+                                                onClick={() => handleClientSelect(client)}
+                                            >
+                                                {/* Gradient accent bar */}
+                                                <Box className="card-gradient" sx={{
+                                                    height: 4,
+                                                    background: gradient,
+                                                    transition: 'height 0.3s ease',
+                                                }} />
+                                                <CardContent sx={{ p: 3 }}>
+                                                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                                                        <Box display="flex" alignItems="center" gap={2.5}>
+                                                            <Box className="card-icon" sx={{
+                                                                width: 52,
+                                                                height: 52,
+                                                                borderRadius: 3,
+                                                                background: gradient,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'transform 0.3s ease',
+                                                                boxShadow: `0 4px 14px ${alpha('#000', 0.15)}`,
+                                                            }}>
+                                                                <Building2 size={26} color="#fff" strokeWidth={1.8} />
+                                                            </Box>
+                                                            <Box>
+                                                                <Typography variant="h6" fontWeight={700} sx={{
+                                                                    fontSize: '1.05rem',
+                                                                    letterSpacing: '-0.01em',
+                                                                    lineHeight: 1.3,
+                                                                }}>
+                                                                    {client.name}
+                                                                </Typography>
+                                                                <Typography variant="caption" color="text.secondary" sx={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 0.5,
+                                                                    mt: 0.3,
+                                                                    opacity: 0.7,
+                                                                }}>
+                                                                    <Users size={12} /> Cliente
+                                                                </Typography>
+                                                            </Box>
+                                                        </Box>
+                                                        <Box className="card-arrow" sx={{
+                                                            opacity: 0,
+                                                            transform: 'translateX(-8px)',
+                                                            transition: 'all 0.3s ease',
+                                                            color: 'text.secondary',
+                                                        }}>
+                                                            <ChevronRight size={22} />
+                                                        </Box>
+                                                    </Box>
+                                                </CardContent>
+                                            </Card>
+                                        </Grid>
+                                    )
+                                })}
+                                {!projectLoading && clients.length === 0 && (
+                                    <Grid size={{ xs: 12 }}>
+                                        <Box textAlign="center" py={8}>
+                                            <Building2 size={48} color={theme.palette.text.disabled} strokeWidth={1} />
+                                            <Typography color="text.secondary" mt={2}>Nenhum cliente encontrado.</Typography>
+                                        </Box>
+                                    </Grid>
+                                )}
+                            </Grid>
+                        )}
+                    </Box>
+                </Fade>
             )}
 
-            <div className="bg-white rounded-lg shadow-sm p-4 space-y-4">
-                <div className="flex gap-4 flex-wrap">
-                    <div className="flex-1 min-w-[300px]">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Buscar..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            {/* Step 2: Project Selection */}
+            {step === 'project' && (
+                <Fade in={true}>
+                    <Box>
+                        {projectLoading ? (
+                            <Box display="flex" justifyContent="center" py={8}>
+                                <CircularProgress />
+                            </Box>
+                        ) : (
+                            <Grid container spacing={3}>
+                                {projects.map((project, index) => {
+                                    const projectGradients = [
+                                        'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
+                                        'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)',
+                                        'linear-gradient(135deg, #fc5c7d 0%, #6a82fb 100%)',
+                                        'linear-gradient(135deg, #f857a6 0%, #ff5858 100%)',
+                                        'linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%)',
+                                        'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                                    ]
+                                    const gradient = projectGradients[index % projectGradients.length]
+                                    const statusColor = project.status === 'active' ? '#22c55e' : '#94a3b8'
+                                    return (
+                                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={project.id}>
+                                            <Card
+                                                elevation={0}
+                                                sx={{
+                                                    borderRadius: 4,
+                                                    overflow: 'hidden',
+                                                    cursor: 'pointer',
+                                                    position: 'relative',
+                                                    border: '1px solid',
+                                                    borderColor: alpha(theme.palette.divider, 0.08),
+                                                    bgcolor: alpha(theme.palette.background.paper, 0.8),
+                                                    backdropFilter: 'blur(12px)',
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-6px)',
+                                                        boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.15)}`,
+                                                        borderColor: alpha(theme.palette.primary.main, 0.3),
+                                                        '& .card-gradient': {
+                                                            height: 6,
+                                                        },
+                                                        '& .card-arrow': {
+                                                            opacity: 1,
+                                                            transform: 'translateX(0)',
+                                                        },
+                                                        '& .card-icon': {
+                                                            transform: 'scale(1.1) rotate(-5deg)',
+                                                        },
+                                                    }
+                                                }}
+                                                onClick={() => handleProjectSelect(project)}
+                                            >
+                                                {/* Gradient accent bar */}
+                                                <Box className="card-gradient" sx={{
+                                                    height: 4,
+                                                    background: gradient,
+                                                    transition: 'height 0.3s ease',
+                                                }} />
+                                                <CardContent sx={{ p: 3 }}>
+                                                    <Box display="flex" alignItems="center" justifyContent="space-between">
+                                                        <Box display="flex" alignItems="center" gap={2.5}>
+                                                            <Box className="card-icon" sx={{
+                                                                width: 52,
+                                                                height: 52,
+                                                                borderRadius: 3,
+                                                                background: gradient,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'transform 0.3s ease',
+                                                                boxShadow: `0 4px 14px ${alpha('#000', 0.15)}`,
+                                                            }}>
+                                                                <FolderOpen size={26} color="#fff" strokeWidth={1.8} />
+                                                            </Box>
+                                                            <Box>
+                                                                <Typography variant="h6" fontWeight={700} sx={{
+                                                                    fontSize: '1.05rem',
+                                                                    letterSpacing: '-0.01em',
+                                                                    lineHeight: 1.3,
+                                                                }}>
+                                                                    {project.name}
+                                                                </Typography>
+                                                                <Typography variant="body2" color="text.secondary" sx={{
+                                                                    mt: 0.3,
+                                                                    opacity: 0.7,
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 1,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                    overflow: 'hidden',
+                                                                    fontSize: '0.8rem',
+                                                                }}>
+                                                                    {project.description || 'Sem descrição'}
+                                                                </Typography>
+                                                            </Box>
+                                                        </Box>
+                                                        <Box display="flex" alignItems="center" gap={1}>
+                                                            <Chip
+                                                                size="small"
+                                                                label={project.status === 'active' ? 'Ativo' : project.status}
+                                                                sx={{
+                                                                    height: 22,
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: 600,
+                                                                    bgcolor: alpha(statusColor, 0.12),
+                                                                    color: statusColor,
+                                                                    border: `1px solid ${alpha(statusColor, 0.3)}`,
+                                                                }}
+                                                            />
+                                                            <Box className="card-arrow" sx={{
+                                                                opacity: 0,
+                                                                transform: 'translateX(-8px)',
+                                                                transition: 'all 0.3s ease',
+                                                                color: 'text.secondary',
+                                                            }}>
+                                                                <ChevronRight size={22} />
+                                                            </Box>
+                                                        </Box>
+                                                    </Box>
+                                                </CardContent>
+                                            </Card>
+                                        </Grid>
+                                    )
+                                })}
+                                {projects.length === 0 && (
+                                    <Grid size={{ xs: 12 }}>
+                                        <Box textAlign="center" py={8}>
+                                            <FolderOpen size={48} color={theme.palette.text.disabled} strokeWidth={1} />
+                                            <Typography color="text.secondary" mt={2}>Nenhum projeto encontrado para este cliente.</Typography>
+                                            <Button variant="outlined" sx={{ mt: 2, borderRadius: 2 }} onClick={resetSelection}>Voltar aos Clientes</Button>
+                                        </Box>
+                                    </Grid>
+                                )}
+                            </Grid>
+                        )}
+                    </Box>
+                </Fade>
+            )}
+
+            {/* Step 3: Device Listing */}
+            {step === 'devices' && (
+                <Fade in={true}>
+                    <Box>
+                        <Box display="flex" justifyContent="flex-end" mb={3} gap={2}>
+                            <Stack direction="row" spacing={1} sx={{ mr: 'auto' }}>
+                                <Button
+                                    size="small"
+                                    variant={viewMode === 'table' ? 'contained' : 'outlined'}
+                                    onClick={() => setViewMode('table')}
+                                    sx={{ minWidth: 40, p: 1 }}
+                                >
+                                    <HomeIcon fontSize="small" />
+                                </Button>
+                                <Button
+                                    size="small"
+                                    variant={viewMode === 'grid' ? 'contained' : 'outlined'}
+                                    onClick={() => setViewMode('grid')}
+                                    sx={{ minWidth: 40, p: 1 }}
+                                >
+                                    <DashboardIcon fontSize="small" />
+                                </Button>
+                            </Stack>
+                            <Button
+                                variant="outlined"
+                                onClick={(e) => setImportMenuAnchor(e.currentTarget)}
+                                startIcon={<Upload size={20} />}
+                                endIcon={<ChevronDown size={16} />}
+                            >
+                                Importar
+                            </Button>
+                            <Menu
+                                anchorEl={importMenuAnchor}
+                                open={Boolean(importMenuAnchor)}
+                                onClose={() => setImportMenuAnchor(null)}
+                            >
+                                <MenuItem onClick={() => { setImportMenuAnchor(null); setShowSmartImport(true); }}>
+                                    <ListItemIcon><Sparkles size={18} color="#9333ea" /></ListItemIcon>
+                                    <ListItemText
+                                        primary="Importação Inteligente"
+                                        secondary="Com categorização via IA"
+                                    />
+                                </MenuItem>
+                                <MenuItem onClick={() => { setImportMenuAnchor(null); setShowImport(true); }}>
+                                    <ListItemIcon><Upload size={18} /></ListItemIcon>
+                                    <ListItemText
+                                        primary="Importação Básica"
+                                        secondary="Planilha SADP tradicional"
+                                    />
+                                </MenuItem>
+                            </Menu>
+                            <Button
+                                variant="contained"
+                                size="small"
+                                disableElevation
+                                onClick={() => {
+                                    console.log('Clicking Add device');
+                                    handleAddDevice();
+                                }}
+                                startIcon={<Plus size={18} />}
+                                sx={{ borderRadius: 2, px: 2, fontWeight: 600 }}
+                            >
+                                Adicionar Dispositivo
+                            </Button>
+                        </Box>
+
+                        <Card sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+                            <Grid container spacing={2} alignItems="center">
+                                <Grid size={{ xs: 12, md: 4 }}>
+                                    <TextField
+                                        fullWidth
+                                        placeholder="Buscar..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        size="small"
+                                        InputProps={{
+                                            startAdornment: <Search size={20} style={{ marginRight: 8, opacity: 0.5 }} />
+                                        }}
+                                    />
+                                </Grid>
+
+                                <Grid size={{ xs: 12, md: 8 }}>
+                                    <Box display="flex" gap={2} alignItems="center" flexWrap="wrap" justifyContent="flex-end">
+                                        <Button
+                                            variant="outlined"
+                                            onClick={handleExportCSV}
+                                            startIcon={<Download size={20} />}
+                                        >
+                                            Exportar CSV
+                                        </Button>
+
+                                        <Divider orientation="vertical" flexItem />
+
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                            <Filter size={18} style={{ opacity: 0.7 }} />
+                                            <Typography variant="body2" fontWeight={500} color="text.secondary">
+                                                Filtros:
+                                            </Typography>
+                                        </Box>
+
+                                        <FormControl size="small" sx={{ minWidth: 150 }}>
+                                            <Select
+                                                value={filterManufacturer}
+                                                onChange={(e) => setFilterManufacturer(e.target.value)}
+                                                displayEmpty
+                                            >
+                                                <MenuItem value="all">Todos os Fabricantes</MenuItem>
+                                                {manufacturers.map(m => (
+                                                    <MenuItem key={m} value={m}>{m}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+
+                                        <FormControl size="small" sx={{ minWidth: 150 }}>
+                                            <Select
+                                                value={filterLocation}
+                                                onChange={(e) => setFilterLocation(e.target.value)}
+                                                displayEmpty
+                                            >
+                                                <MenuItem value="all">Todas as Localizações</MenuItem>
+                                                {locations.map(l => (
+                                                    <MenuItem key={l} value={l}>{l}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+
+                                        {(filterManufacturer !== 'all' || filterLocation !== 'all' || searchTerm) && (
+                                            <Button
+                                                size="small"
+                                                onClick={() => {
+                                                    setFilterManufacturer('all')
+                                                    setFilterLocation('all')
+                                                    setSearchTerm('')
+                                                }}
+                                            >
+                                                Limpar Filtros
+                                            </Button>
+                                        )}
+                                    </Box>
+                                </Grid>
+                            </Grid>
+
+                            <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
+                                <Typography variant="body2" color="text.secondary">
+                                    Mostrando {filteredDevices.length} de {devices.length} dispositivos
+                                </Typography>
+                            </Box>
+                        </Card>
+
+                        {viewMode === 'table' ? (
+                            <InventoryTable
+                                devices={filteredDevices}
+                                loading={loading}
+                                onView={handleViewDevice}
+                                onEdit={handleEditDevice}
+                                onRefresh={loadData}
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
                             />
-                        </div>
-                    </div>
+                        ) : (
+                            <Grid container spacing={2.5}>
+                                {filteredDevices.map((device) => {
+                                    const isOnline = device.status === 'active';
+                                    const statusColor = isOnline ? '#22c55e' :
+                                        device.status === 'error' ? '#ef4444' :
+                                            device.status === 'maintenance' ? '#f59e0b' : '#94a3b8';
 
-                    <button
-                        onClick={handleExportCSV}
-                        className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                        <Download size={20} />
-                        Exportar CSV
-                    </button>
-                </div>
+                                    return (
+                                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={device.id}>
+                                            <Card
+                                                elevation={0}
+                                                sx={{
+                                                    borderRadius: 4,
+                                                    border: '1px solid',
+                                                    borderColor: alpha(theme.palette.divider, 0.08),
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    position: 'relative',
+                                                    overflow: 'hidden',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-4px)',
+                                                        boxShadow: `0 12px 24px ${alpha(theme.palette.common.black, 0.08)}`,
+                                                        borderColor: alpha(statusColor, 0.3),
+                                                        '& .device-actions': { opacity: 1 }
+                                                    }
+                                                }}
+                                            >
+                                                <Box sx={{
+                                                    height: 4,
+                                                    bgcolor: statusColor,
+                                                    boxShadow: `0 2px 4px ${alpha(statusColor, 0.2)}`
+                                                }} />
 
-                <div className="flex gap-4 flex-wrap items-center">
-                    <div className="flex items-center gap-2">
-                        <Filter size={18} className="text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">Filtros:</span>
-                    </div>
+                                                <CardContent sx={{ p: 2.5 }}>
+                                                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                                                        <Box sx={{
+                                                            p: 1.2,
+                                                            borderRadius: 3,
+                                                            bgcolor: alpha(statusColor, 0.1),
+                                                            color: statusColor,
+                                                            display: 'flex'
+                                                        }}>
+                                                            <HardDrive size={20} />
+                                                        </Box>
 
-                    <select
-                        value={filterManufacturer}
-                        onChange={(e) => setFilterManufacturer(e.target.value)}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="all">Todos os Fabricantes</option>
-                        {manufacturers.map(m => (
-                            <option key={m} value={m}>{m}</option>
-                        ))}
-                    </select>
+                                                        <Box className="device-actions" sx={{
+                                                            opacity: 0,
+                                                            transition: 'opacity 0.2s',
+                                                            display: 'flex',
+                                                            gap: 0.5
+                                                        }}>
+                                                            <Button size="small" sx={{ minWidth: 32, p: 0.5 }} onClick={() => handleViewDevice(device)}>
+                                                                <Eye size={16} />
+                                                            </Button>
+                                                            <Button size="small" sx={{ minWidth: 32, p: 0.5 }} onClick={() => handleEditDevice(device)}>
+                                                                <Edit size={16} />
+                                                            </Button>
+                                                        </Box>
+                                                    </Box>
 
-                    <select
-                        value={filterLocation}
-                        onChange={(e) => setFilterLocation(e.target.value)}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="all">Todas as Localizações</option>
-                        {locations.map(l => (
-                            <option key={l} value={l}>{l}</option>
-                        ))}
-                    </select>
+                                                    <Typography variant="subtitle1" fontWeight={700} noWrap sx={{ mb: 0.5 }}>
+                                                        {device.hostname || device.ip_address}
+                                                    </Typography>
 
-                    {(filterManufacturer !== 'all' || filterLocation !== 'all' || searchTerm) && (
-                        <button
-                            onClick={() => {
-                                setFilterManufacturer('all')
-                                setFilterLocation('all')
-                                setSearchTerm('')
-                            }}
-                            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                            Limpar Filtros
-                        </button>
-                    )}
-                </div>
+                                                    <Typography variant="body2" color="text.secondary" noWrap sx={{ mb: 2, fontSize: '0.8rem' }}>
+                                                        {device.model} • {device.manufacturer}
+                                                    </Typography>
 
-                <div className="text-sm text-gray-600">
-                    Mostrando {filteredDevices.length} de {devices.length} dispositivos
-                </div>
-            </div>
+                                                    <Divider sx={{ my: 1.5, opacity: 0.5 }} />
 
-            <InventoryTable
-                devices={filteredDevices}
-                loading={loading}
-                onView={handleViewDevice}
-                onEdit={handleEditDevice}
-                onRefresh={loadData}
-                sortConfig={sortConfig}
-                onSort={handleSort}
-            />
+                                                    <Stack spacing={1}>
+                                                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                            <Typography variant="caption" color="text.secondary">IP</Typography>
+                                                            <Typography variant="caption" fontWeight={600}>{device.ip_address}</Typography>
+                                                        </Box>
+                                                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                            <Typography variant="caption" color="text.secondary">Local</Typography>
+                                                            <Typography variant="caption" fontWeight={600}>{device.location || '-'}</Typography>
+                                                        </Box>
+                                                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                            <Typography variant="caption" color="text.secondary">Status</Typography>
+                                                            <Chip
+                                                                label={device.status === 'active' ? 'Online' : 'Offline'}
+                                                                size="small"
+                                                                sx={{
+                                                                    height: 20,
+                                                                    fontSize: '0.65rem',
+                                                                    bgcolor: alpha(statusColor, 0.1),
+                                                                    color: statusColor,
+                                                                    fontWeight: 700,
+                                                                    border: `1px solid ${alpha(statusColor, 0.2)}`
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                    </Stack>
+                                                </CardContent>
+                                            </Card>
+                                        </Grid>
+                                    );
+                                })}
+                            </Grid>
+                        )}
+                    </Box>
+                </Fade>
+            )}
 
-            {showForm && (
+            <Dialog
+                open={showForm}
+                onClose={handleFormClose}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: { borderRadius: 4, bgcolor: 'background.paper' }
+                }}
+            >
                 <InventoryForm
                     device={editingDevice}
                     onClose={handleFormClose}
                 />
-            )}
+            </Dialog>
 
             {showDetails && selectedDevice && (
                 <DeviceDetailsSheet
@@ -453,8 +898,8 @@ export default function DeviceList({ categoryOverride }: DeviceListProps) {
                     setShowSmartImport(false)
                     loadData()
                 }}
-                projectId={localStorage.getItem('currentProjectId') || ''}
+                projectId={currentProject?.id || ''}
             />
-        </div>
+        </Box>
     )
 }

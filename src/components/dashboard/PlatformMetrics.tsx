@@ -1,6 +1,7 @@
 import { Card, CardContent, Typography, Box, alpha, useTheme } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { Users, Folder, HardDrive, AlertTriangle, ChevronRight, Layers } from 'lucide-react'
+import { useAppSelector } from '../../store/hooks'
 
 interface PlatformMetricsProps {
     data: {
@@ -16,6 +17,7 @@ interface PlatformMetricsProps {
 export default function PlatformMetrics({ data }: PlatformMetricsProps) {
     const theme = useTheme()
     const navigate = useNavigate()
+    const { currentProject } = useAppSelector((state) => state.project)
 
     const metrics = [
         {
