@@ -142,14 +142,14 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
             info: colors.info,
             ...(effectiveMode === 'dark' ? {
                 background: {
-                    default: '#111217',     // Grafana-like dark
-                    paper: '#181b1f',       // Slightly lighter
+                    default: '#0A0E17',     // Deep Midnight Navy
+                    paper: '#121826',       // Refined Navy Surface
                 },
                 text: {
-                    primary: '#d0d5dd',
-                    secondary: '#9ca3af',
+                    primary: '#F9FAFB',     // Clean White
+                    secondary: '#94A3B8',   // Slate Blue Secondary
                 },
-                divider: 'rgba(255, 255, 255, 0.06)',
+                divider: 'rgba(148, 163, 184, 0.12)', // Subtle Slate Divider
             } : {
                 background: {
                     default: '#f0f2f5',
@@ -252,18 +252,22 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
                 },
                 styleOverrides: {
                     root: ({ theme }) => ({
-                        borderRadius: 4, // Slightly sharper corners
+                        borderRadius: 8,
                         border: theme.palette.mode === 'light'
-                            ? `2px solid rgba(0, 0, 0, 0.12)`
-                            : `1px solid ${theme.palette.divider}`,
+                            ? `1px solid rgba(0, 0, 0, 0.08)`
+                            : `1px solid rgba(148, 163, 184, 0.1)`,
+                        backgroundColor: theme.palette.mode === 'dark' ? '#161D2F' : '#ffffff',
                         backgroundImage: 'none',
-                        boxShadow: 'none',
-                        transition: 'all 0.15s ease',
+                        boxShadow: theme.palette.mode === 'dark'
+                            ? '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1)'
+                            : '0 1px 3px rgba(0,0,0,0.05)',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         '&:hover': {
                             borderColor: theme.palette.primary.main,
-                            boxShadow: theme.palette.mode === 'light'
-                                ? `0 0 0 1px ${theme.palette.primary.main}`
-                                : 'none',
+                            transform: 'translateY(-2px)',
+                            boxShadow: theme.palette.mode === 'dark'
+                                ? `0 12px 20px -5px rgba(0, 0, 0, 0.3)`
+                                : `0 10px 15px -3px rgba(0, 0, 0, 0.1)`,
                         },
                     }),
                 },
@@ -298,9 +302,9 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
                 styleOverrides: {
                     root: ({ theme }) => ({
                         backgroundImage: 'none',
-                        backgroundColor: '#151b26', // HikCentral Navbar dark
-                        borderBottom: `2px solid ${theme.palette.primary.main}`, // Red accent line
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        backgroundColor: theme.palette.mode === 'dark' ? '#0F1524' : '#151b26',
+                        borderBottom: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : theme.palette.primary.main}`,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     }),
                 },
             },
@@ -318,7 +322,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
                 styleOverrides: {
                     paper: ({ theme }) => ({
                         backgroundImage: 'none',
-                        backgroundColor: theme.palette.mode === 'dark' ? '#111217' : '#ffffff',
+                        backgroundColor: theme.palette.mode === 'dark' ? '#0F1524' : '#ffffff',
                         borderRight: `1px solid ${theme.palette.divider}`,
                     }),
                 },

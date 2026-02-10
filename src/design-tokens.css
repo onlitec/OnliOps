@@ -21,13 +21,13 @@
   --radius-md: 8px;
   --radius-lg: 12px;
 
-  /* Cores neutras e superfícies (dark corporativo) */
-  --color-bg-body: #111217;
-  --color-bg-surface: #181b1f;
-  --color-bg-elevated: #1e2128;
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-text-primary: #d0d5dd;
-  --color-text-secondary: #9ca3af;
+  /* Cores neutras e superfícies (Midnight Navy Premium) */
+  --color-bg-body: #0A0E17;
+  --color-bg-surface: #121826;
+  --color-bg-elevated: #161D2F;
+  --color-border-subtle: rgba(148, 163, 184, 0.12);
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #94A3B8;
 
   /* Aliases legados usados em estilos existentes */
   --color-bg-dark: var(--color-bg-body);
