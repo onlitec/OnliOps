@@ -1,8 +1,8 @@
 -- Insert sample users
 INSERT INTO users (email, name, role, is_active) VALUES
-('admin@calabasas.com', 'Administrador Principal', 'admin', true),
-('security@calabasas.com', 'Operador de Segurança', 'security_operator', true),
-('tech@calabasas.com', 'Visualizador Técnico', 'technical_viewer', true);
+('admin@onliops.com', 'Administrador Principal', 'admin', true),
+('security@onliops.com', 'Operador de Segurança', 'security_operator', true),
+('tech@onliops.com', 'Visualizador Técnico', 'technical_viewer', true);
 
 -- Insert sample network devices
 INSERT INTO network_devices (vlan_id, device_type, model, manufacturer, ip_address, mac_address, hostname, location, status) VALUES

@@ -101,11 +101,13 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    ports:
-      - "80:80"
+    # ports:
+    #   - "80:80"
     labels:
       - "coolify.managed=true"
       - "coolify.expose=true"
+      - "traefik.http.middlewares.onliops-timeout.forwardingwaiters.timeout=300s"
+      - "traefik.http.routers.onliops-api.middlewares=onliops-timeout"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1/" ]
       interval: 30s

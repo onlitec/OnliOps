@@ -18,7 +18,7 @@
     "validate:auth": "node scripts/validate-auth.ts",
     "setup:postgres": "bash scripts/setup-postgres.sh --db-name network_platform --db-user network_admin --db-pass $PGPASSWORD",
     "migrate:local": "bash scripts/apply-migrations.sh",
-    "setup:nginx": "bash scripts/setup-nginx.sh --server-name local.project --site-root /opt/calabasas/dist",
+    "setup:nginx": "bash scripts/setup-nginx.sh --server-name local.project --site-root /opt/onliops/dist",
     "monitor:services": "bash scripts/monitor/check-services.sh",
     "backup:db": "bash scripts/backup-postgres.sh"
   },

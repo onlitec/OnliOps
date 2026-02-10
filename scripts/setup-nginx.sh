@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SERVER_NAME=""
-SITE_ROOT="/opt/calabasas/dist"
+SITE_ROOT="/opt/onliops/dist"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -13,7 +13,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$SERVER_NAME" ]]; then
-  echo "Uso: $0 --server-name <domínio> [--site-root /opt/calabasas/dist]"; exit 1
+  echo "Uso: $0 --server-name <domínio> [--site-root /opt/onliops/dist]"; exit 1
 fi
 
 echo "Instalando Nginx..."

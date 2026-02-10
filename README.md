@@ -24,7 +24,7 @@ O **OnliOps** é uma plataforma web completa que combina:
 
 ```bash
 # 1. Clone o repositório
-cd /opt/calabasas
+cd /opt/onliops
 
 # 2. Execute o setup automático (primeira vez)
 bash scripts/setup-local-dev.sh
@@ -106,7 +106,7 @@ bash scripts/monitor/check-services.sh # Monitorar serviços
 ## 📁 Estrutura do Projeto
 
 ```
-/opt/calabasas/
+/opt/onliops/
 ├── src/
 │   ├── components/      # Componentes React
 │   │   ├── auth/       # Autenticação
@@ -174,8 +174,8 @@ cp .env.example .env
 ```env
 # Database
 PGHOST=127.0.0.1
-PGDATABASE=calabasas_local
-PGUSER=calabasas_admin
+PGDATABASE=onliops_local
+PGUSER=onliops_admin
 PGPASSWORD=sua-senha-aqui
 
 # Supabase
@@ -217,7 +217,7 @@ sudo systemctl restart postgresql
 
 **3. Nginx 403**
 ```bash
-sudo chown -R www-data:www-data /opt/calabasas/dist
+sudo chown -R www-data:www-data /opt/onliops/dist
 sudo systemctl restart nginx
 ```
 

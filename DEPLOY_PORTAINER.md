@@ -166,7 +166,7 @@ docker exec -i onliops-database psql -U onliops onliops < backup_YYYYMMDD.sql
 1. No Portainer: **Stacks** → **onliops** → **Pull and redeploy**
 2. Ou via CLI:
    ```bash
-   cd /opt/calabasas
+   cd /opt/onliops
    git pull
    docker-compose -f docker-compose.prod.yaml up -d --build
    ```
@@ -222,7 +222,7 @@ docker stats onliops-api onliops-web onliops-database onliops-ollama
 ## 📁 Estrutura de Arquivos de Produção
 
 ```
-/opt/calabasas/
+/opt/onliops/
 ├── docker-compose.prod.yaml      # Com Traefik
 ├── docker-compose.standalone.yaml # Sem Traefik
 ├── .env.production               # Variáveis de ambiente

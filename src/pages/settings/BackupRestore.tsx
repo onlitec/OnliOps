@@ -48,7 +48,7 @@ export default function BackupRestore() {
                                     fontSize: '0.875rem'
                                 }}
                             >
-                                pg_dump -h 127.0.0.1 -U calabasas_admin -d calabasas_local {'>'}
+                                pg_dump -h 127.0.0.1 -U onliops_admin -d onliops_local {'>'}
                                 backup_$(date +%Y%m%d_%H%M%S).sql
                             </Box>
                         </Box>
@@ -69,7 +69,7 @@ export default function BackupRestore() {
                                     fontSize: '0.875rem'
                                 }}
                             >
-                                psql -h 127.0.0.1 -U calabasas_admin -d calabasas_local {'<'} backup_file.sql
+                                psql -h 127.0.0.1 -U onliops_admin -d onliops_local {'<'} backup_file.sql
                             </Box>
                         </Box>
 

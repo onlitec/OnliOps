@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configurações do banco
-DB_NAME="calabasas_local"
+DB_NAME="onliops_local"
 DB_USER="postgres"
 
 # Função para executar query e verificar resultado
@@ -150,7 +150,7 @@ files=(
 )
 
 for file in "${files[@]}"; do
-    if [ -f "/opt/calabasas/$file" ]; then
+    if [ -f "/opt/onliops/$file" ]; then
         echo -e "${GREEN}✓${NC} $file existe"
     else
         echo -e "${RED}✗${NC} $file NÃO existe"
@@ -166,7 +166,7 @@ docs=(
 )
 
 for doc in "${docs[@]}"; do
-    if [ -f "/opt/calabasas/$doc" ]; then
+    if [ -f "/opt/onliops/$doc" ]; then
         echo -e "${GREEN}✓${NC} $doc existe"
     else
         echo -e "${RED}✗${NC} $doc NÃO existe"

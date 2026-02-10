@@ -71,16 +71,16 @@ export class LocalAuthService {
       
       // 3. Fallback para usuários locais legados
       const legacyUsers: Record<string, { id: string; email: string; password: string; name: string; role: 'admin' | 'technical_viewer' }> = {
-        'teste@calabasas.local': {
+        'teste@onliops.local': {
           id: '00000000-0000-0000-0000-000000000001',
-          email: 'teste@calabasas.local',
+          email: 'teste@onliops.local',
           password: 'teste123',
           name: 'Usuário Teste',
           role: 'technical_viewer',
         },
-        'admin@calabasas.local': {
+        'admin@onliops.local': {
           id: '00000000-0000-0000-0000-000000000002',
-          email: 'admin@calabasas.local',
+          email: 'admin@onliops.local',
           password: 'admin123',
           name: 'Administrador',
           role: 'admin',

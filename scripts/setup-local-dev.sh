@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "========================================"
-echo "  CALABASAS - Setup Desenvolvimento Local"
+echo "  ONLIOPS - Setup Desenvolvimento Local"
 echo "========================================"
 
 # Cores para output
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Verificar se está rodando no diretório correto
 if [[ ! -f "package.json" ]]; then
-  echo -e "${RED}❌ Execute este script da raiz do projeto (/opt/calabasas)${NC}"
+  echo -e "${RED}❌ Execute este script da raiz do projeto (/opt/onliops)${NC}"
   exit 1
 fi
 
@@ -25,12 +25,12 @@ if [[ ! -f ".env" ]]; then
 # Database Configuration (PostgreSQL Local)
 PGHOST=127.0.0.1
 PGPORT=5432
-PGUSER=calabasas_admin
-PGPASSWORD=Calabasas@2025!
-PGDATABASE=calabasas_local
+PGUSER=onliops_admin
+PGPASSWORD=OnliOps@2025!
+PGDATABASE=onliops_local
 
 # Database URL
-DATABASE_URL=postgresql://calabasas_admin:Calabasas@2025!@127.0.0.1:5432/calabasas_local
+DATABASE_URL=postgresql://onliops_admin:OnliOps@2025!@127.0.0.1:5432/onliops_local
 
 # Supabase Configuration (Local Development)
 VITE_SUPABASE_URL=http://127.0.0.1:54321
@@ -121,7 +121,7 @@ PGPASSWORD="$PGPASSWORD" psql -h "$PGHOST" -U "$PGUSER" -d "$PGDATABASE" <<-EOSQ
 INSERT INTO public.users (id, email, name, role, is_active, created_at, updated_at)
 VALUES (
   gen_random_uuid(),
-  'admin@calabasas.local',
+  'admin@onliops.local',
   'Administrador',
   'admin',
   true,
@@ -129,7 +129,7 @@ VALUES (
   NOW()
 ) ON CONFLICT (email) DO UPDATE SET updated_at = NOW();
 
-SELECT id, email, name, role FROM public.users WHERE email = 'admin@calabasas.local';
+SELECT id, email, name, role FROM public.users WHERE email = 'admin@onliops.local';
 EOSQL
 
 echo ""
@@ -193,14 +193,14 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo ""
 echo -e "${BLUE}📊 Informações do Sistema:${NC}"
 echo "   • Banco de dados: $PGDATABASE @ $PGHOST:$PGPORT"
-echo "   • Usuário admin: admin@calabasas.local"
+echo "   • Usuário admin: admin@onliops.local"
 echo "   • URL Produção: https://$VITE_LOCAL_IP"
 echo "   • URL Desenvolvimento: http://localhost:5173"
 echo ""
 echo -e "${BLUE}🚀 Próximos passos:${NC}"
 echo "   1. Acesse: ${YELLOW}https://$VITE_LOCAL_IP${NC}"
 echo "   2. Aceite o certificado SSL autoassinado"
-echo "   3. Faça login com: ${YELLOW}admin@calabasas.local${NC}"
+echo "   3. Faça login com: ${YELLOW}admin@onliops.local${NC}"
 echo ""
 echo "   ${BLUE}Para desenvolvimento com hot reload:${NC}"
 echo "   ${YELLOW}npm run dev${NC}"

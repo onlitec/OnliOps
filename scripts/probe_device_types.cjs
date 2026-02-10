@@ -3,9 +3,9 @@ const { Pool } = require('pg');
 const pool = new Pool({
     host: process.env.PGHOST || '127.0.0.1',
     port: parseInt(process.env.PGPORT) || 5432,
-    database: process.env.PGDATABASE || 'calabasas_local',
-    user: process.env.PGUSER || 'calabasas_admin',
-    password: process.env.PGPASSWORD || 'Calabasas@2025!'
+    database: process.env.PGDATABASE || 'onliops_local',
+    user: process.env.PGUSER || 'onliops_admin',
+    password: process.env.PGPASSWORD || 'OnliOps@2025!'
 });
 
 const typesToTest = [

@@ -9,7 +9,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo "========================================"
-echo "  CALABASAS - Health Check"
+echo "  ONLIOPS - Health Check"
 echo "========================================"
 
 # Carregar variáveis

@@ -9,7 +9,7 @@ else
   exit 1
 fi
 
-echo "🚀 Iniciando servidor de desenvolvimento Calabasas..."
+echo "🚀 Iniciando servidor de desenvolvimento OnliOps..."
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  📍 Modo: DESENVOLVIMENTO (Hot Reload)"

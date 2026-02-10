@@ -22,7 +22,7 @@ echo ""
 
 # Verificar se precisa instalar dependências
 echo -e "${BLUE}📦 Verificando dependências...${NC}"
-cd /opt/calabasas
+cd /opt/onliops
 
 # Instalar prom-client para Prometheus (se não existir)
 if ! npm list prom-client >/dev/null 2>&1; then
@@ -59,8 +59,8 @@ echo ""
 # Informar próximos passos
 echo -e "${YELLOW}📋 Próximos Passos Manuais:${NC}"
 echo "1. Revisar arquivos criados em:"
-echo "   - /opt/calabasas/server/middleware/authorization.js"
-echo "   - /opt/calabasas/scripts/migrations/017_add_permissions_system.sql"
+echo "   - /opt/onliops/server/middleware/authorization.js"
+echo "   - /opt/onliops/scripts/migrations/017_add_permissions_system.sql"
 echo ""
 echo "2. Os seguintes componentes precisam ser criados:"
 echo "   Frontend:"
@@ -87,4 +87,4 @@ echo -e "${GREEN}✅ Script de setup concluído${NC}"
 echo ""
 echo "⚠️  IMPORTANTE: Devido à extensão do código (3000+ linhas),"
 echo "   a implementação completa requer criação manual dos componentes"
-echo "   seguindo os planejamentos em /opt/calabasas/docs/planning/"
+echo "   seguindo os planejamentos em /opt/onliops/docs/planning/"

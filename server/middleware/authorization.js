@@ -4,9 +4,9 @@ const { Pool } = require('pg')
 const pool = new Pool({
     host: '127.0.0.1',
     port: 5432,
-    database: 'calabasas_local',
-    user: 'calabasas_admin',
-    password: 'Calabasas@2025!'
+    database: 'onliops_local',
+    user: 'onliops_admin',
+    password: 'OnliOps@2025!'
 })
 
 // Check if user has permission for a resource and action

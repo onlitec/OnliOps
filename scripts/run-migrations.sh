@@ -25,8 +25,8 @@ fi
 echo -e "${GREEN}[OK] Container database: $DB_CONTAINER${NC}"
 
 # Configurações do banco
-DB_USER="calabasas_admin"
-DB_NAME="calabasas_local"
+DB_USER="onliops_admin"
+DB_NAME="onliops_local"
 
 # Diretório das migrations
 MIGRATIONS_DIR="/data/coolify/applications/icww0c48c8k8cw0o4088scgk/supabase/migrations"

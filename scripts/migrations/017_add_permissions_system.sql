@@ -85,7 +85,7 @@ platform_admin_role_id UUID;
 BEGIN
 SELECT id INTO admin_user_id
 FROM users
-WHERE email = 'admin@calabasas.local'
+WHERE email = 'admin@onliops.local'
 LIMIT 1;
 SELECT id INTO platform_admin_role_id
 FROM roles

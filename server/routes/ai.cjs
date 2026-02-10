@@ -173,9 +173,20 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
         let aiAnalysis = null;
         if (aiAvailable) {
-            const aiResult = await aiService.analyzeSpreadsheet(analysisInput);
-            if (aiResult.success) {
-                aiAnalysis = aiResult.analysis;
+            try {
+                // Limit AI analysis to 15 seconds to avoid gateway timeouts
+                const aiPromise = aiService.analyzeSpreadsheet(analysisInput);
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('AI Analysis timeout')), 15000)
+                );
+
+                const aiResult = await Promise.race([aiPromise, timeoutPromise]);
+                if (aiResult.success) {
+                    aiAnalysis = aiResult.analysis;
+                }
+            } catch (aiError) {
+                console.warn('AI Analysis skipped or timed out:', aiError.message);
+                // Continue without AI analysis - the user will still see local auto-detection
             }
         }
 
@@ -458,36 +469,48 @@ router.post('/preview-import', async (req, res) => {
         if (devicesNeedingCategorization.length > 0) {
             const aiAvailable = await aiService.isAvailable();
             if (aiAvailable) {
-                console.log(`Categorizing ${devicesNeedingCategorization.length} devices with AI`);
-                const catResult = await aiService.categorizeDevices(
-                    devicesNeedingCategorization.map(d => ({
-                        model: d.model,
-                        manufacturer: d.manufacturer,
-                        hostname: d.hostname,
-                        description: d.description,
-                        serial_number: d.serial_number // Pass serial for manufacturer identification
-                    })),
-                    categories
-                );
+                try {
+                    console.log(`Categorizing ${devicesNeedingCategorization.length} devices with AI`);
 
-                if (catResult.success) {
-                    aiCategorization = catResult.categorizations;
+                    // Limit categorization to 30 seconds to avoid gateway timeouts
+                    const catPromise = aiService.categorizeDevices(
+                        devicesNeedingCategorization.map(d => ({
+                            model: d.model,
+                            manufacturer: d.manufacturer,
+                            hostname: d.hostname,
+                            description: d.description,
+                            serial_number: d.serial_number
+                        })),
+                        categories
+                    );
 
-                    // Apply categorizations AND manufacturer from AI
-                    aiCategorization.forEach(cat => {
-                        const device = devicesNeedingCategorization[cat.original_index];
-                        if (device) {
-                            device._suggestedCategory = cat.suggested_category;
-                            device._categoryConfidence = cat.confidence;
-                            device._categoryReason = cat.reason;
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('AI Categorization timeout')), 30000)
+                    );
 
-                            // Apply manufacturer from AI if identified and device doesn't have one
-                            if (cat.manufacturer && (!device.manufacturer || device.manufacturer.trim() === '')) {
-                                device.manufacturer = cat.manufacturer;
-                                device._manufacturerFromAI = true;
+                    const catResult = await Promise.race([catPromise, timeoutPromise]);
+
+                    if (catResult.success) {
+                        aiCategorization = catResult.categorizations;
+
+                        // Apply categorizations AND manufacturer from AI
+                        aiCategorization.forEach(cat => {
+                            const device = devicesNeedingCategorization[cat.original_index];
+                            if (device) {
+                                device._suggestedCategory = cat.suggested_category;
+                                device._categoryConfidence = cat.confidence;
+                                device._categoryReason = cat.reason;
+
+                                // Apply manufacturer from AI if identified and device doesn't have one
+                                if (cat.manufacturer && (!device.manufacturer || device.manufacturer.trim() === '')) {
+                                    device.manufacturer = cat.manufacturer;
+                                    device._manufacturerFromAI = true;
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
+                } catch (catError) {
+                    console.warn('AI Categorization skipped or timed out:', catError.message);
                 }
             }
         }

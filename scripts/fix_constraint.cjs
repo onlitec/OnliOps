@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 const pool = new Pool({
     host: process.env.PGHOST || '127.0.0.1',
     port: parseInt(process.env.PGPORT) || 5432,
-    database: process.env.PGDATABASE || 'calabasas_local',
+    database: process.env.PGDATABASE || 'onliops_local',
     user: process.env.PGUSER_SUPER || 'postgres',
     password: process.env.PGPASSWORD_SUPER || 'postgres'
 });
