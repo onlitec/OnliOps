@@ -34,7 +34,9 @@ import {
     Stack,
     alpha,
     Chip,
-    Dialog
+    Dialog,
+    CardActionArea,
+    Tooltip
 } from '@mui/material'
 import {
     NavigateNext,
@@ -340,101 +342,55 @@ export default function DeviceList({ categoryOverride }: DeviceListProps) {
                             </Box>
                         ) : (
                             <Grid container spacing={3}>
-                                {clients.map((client, index) => {
-                                    const gradients = [
-                                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                                        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                                        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                                        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                                        'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-                                        'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
-                                        'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
-                                    ]
-                                    const gradient = gradients[index % gradients.length]
+                                {clients.map((client) => {
                                     return (
-                                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={client.id}>
+                                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={client.id}>
                                             <Card
                                                 elevation={0}
                                                 sx={{
-                                                    borderRadius: 4,
-                                                    overflow: 'hidden',
-                                                    cursor: 'pointer',
-                                                    position: 'relative',
-                                                    border: '1px solid',
-                                                    borderColor: alpha(theme.palette.divider, 0.08),
-                                                    bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                                    backdropFilter: 'blur(12px)',
-                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    height: '100%',
+                                                    border: '2px solid',
+                                                    borderColor: 'divider',
+                                                    borderRadius: 2,
+                                                    transition: 'all 0.2s ease',
                                                     '&:hover': {
-                                                        transform: 'translateY(-6px)',
-                                                        boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.15)}`,
-                                                        borderColor: alpha(theme.palette.primary.main, 0.3),
-                                                        '& .card-gradient': {
-                                                            height: 6,
-                                                        },
-                                                        '& .card-arrow': {
-                                                            opacity: 1,
-                                                            transform: 'translateX(0)',
-                                                        },
-                                                        '& .card-icon': {
-                                                            transform: 'scale(1.1) rotate(-5deg)',
-                                                        },
+                                                        borderColor: 'primary.main',
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: (theme) => `0 10px 15px -3px ${alpha(theme.palette.common.black, 0.4)}`,
                                                     }
                                                 }}
-                                                onClick={() => handleClientSelect(client)}
                                             >
-                                                {/* Gradient accent bar */}
-                                                <Box className="card-gradient" sx={{
-                                                    height: 4,
-                                                    background: gradient,
-                                                    transition: 'height 0.3s ease',
-                                                }} />
-                                                <CardContent sx={{ p: 3 }}>
-                                                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                                                        <Box display="flex" alignItems="center" gap={2.5}>
-                                                            <Box className="card-icon" sx={{
-                                                                width: 52,
-                                                                height: 52,
-                                                                borderRadius: 3,
-                                                                background: gradient,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                transition: 'transform 0.3s ease',
-                                                                boxShadow: `0 4px 14px ${alpha('#000', 0.15)}`,
-                                                            }}>
-                                                                <Building2 size={26} color="#fff" strokeWidth={1.8} />
-                                                            </Box>
-                                                            <Box>
-                                                                <Typography variant="h6" fontWeight={700} sx={{
-                                                                    fontSize: '1.05rem',
-                                                                    letterSpacing: '-0.01em',
-                                                                    lineHeight: 1.3,
-                                                                }}>
-                                                                    {client.name}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="text.secondary" sx={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: 0.5,
-                                                                    mt: 0.3,
-                                                                    opacity: 0.7,
-                                                                }}>
-                                                                    <Users size={12} /> Cliente
-                                                                </Typography>
-                                                            </Box>
-                                                        </Box>
-                                                        <Box className="card-arrow" sx={{
-                                                            opacity: 0,
-                                                            transform: 'translateX(-8px)',
-                                                            transition: 'all 0.3s ease',
-                                                            color: 'text.secondary',
+                                                <CardActionArea
+                                                    onClick={() => handleClientSelect(client)}
+                                                    sx={{ height: '100%', p: 2 }}
+                                                >
+                                                    <Box display="flex" alignItems="center" gap={2}>
+                                                        <Box sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            bgcolor: 'rgba(230, 0, 18, 0.05)',
+                                                            borderRadius: 1,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: 'primary.main',
+                                                            border: '1px solid rgba(230, 0, 18, 0.1)'
                                                         }}>
-                                                            <ChevronRight size={22} />
+                                                            <Building2 size={20} />
+                                                        </Box>
+                                                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                            <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ color: 'text.primary' }}>
+                                                                {client.name}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                Visualizar Projetos
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ color: 'text.disabled', display: 'flex' }}>
+                                                            <ChevronRight size={18} />
                                                         </Box>
                                                     </Box>
-                                                </CardContent>
+                                                </CardActionArea>
                                             </Card>
                                         </Grid>
                                     )
@@ -463,133 +419,73 @@ export default function DeviceList({ categoryOverride }: DeviceListProps) {
                             </Box>
                         ) : (
                             <Grid container spacing={3}>
-                                {projects.map((project, index) => {
-                                    const projectGradients = [
-                                        'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)',
-                                        'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)',
-                                        'linear-gradient(135deg, #fc5c7d 0%, #6a82fb 100%)',
-                                        'linear-gradient(135deg, #f857a6 0%, #ff5858 100%)',
-                                        'linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%)',
-                                        'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-                                    ]
-                                    const gradient = projectGradients[index % projectGradients.length]
+                                {projects.map((project) => {
                                     const statusColor = project.status === 'active' ? '#22c55e' : '#94a3b8'
                                     return (
-                                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={project.id}>
+                                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={project.id}>
                                             <Card
                                                 elevation={0}
                                                 sx={{
-                                                    borderRadius: 4,
-                                                    overflow: 'hidden',
-                                                    cursor: 'pointer',
-                                                    position: 'relative',
-                                                    border: '1px solid',
-                                                    borderColor: alpha(theme.palette.divider, 0.08),
-                                                    bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                                    backdropFilter: 'blur(12px)',
-                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    height: '100%',
+                                                    border: '2px solid',
+                                                    borderColor: 'divider',
+                                                    borderRadius: 2,
+                                                    transition: 'all 0.2s ease',
                                                     '&:hover': {
-                                                        transform: 'translateY(-6px)',
-                                                        boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.15)}`,
-                                                        borderColor: alpha(theme.palette.primary.main, 0.3),
-                                                        '& .card-gradient': {
-                                                            height: 6,
-                                                        },
-                                                        '& .card-arrow': {
-                                                            opacity: 1,
-                                                            transform: 'translateX(0)',
-                                                        },
-                                                        '& .card-icon': {
-                                                            transform: 'scale(1.1) rotate(-5deg)',
-                                                        },
+                                                        borderColor: 'primary.main',
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: (theme) => `0 10px 15px -3px ${alpha(theme.palette.common.black, 0.4)}`,
                                                     }
                                                 }}
-                                                onClick={() => handleProjectSelect(project)}
                                             >
-                                                {/* Gradient accent bar */}
-                                                <Box className="card-gradient" sx={{
-                                                    height: 4,
-                                                    background: gradient,
-                                                    transition: 'height 0.3s ease',
-                                                }} />
-                                                <CardContent sx={{ p: 3 }}>
-                                                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                                                        <Box display="flex" alignItems="center" gap={2.5}>
-                                                            <Box className="card-icon" sx={{
-                                                                width: 52,
-                                                                height: 52,
-                                                                borderRadius: 3,
-                                                                background: gradient,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                transition: 'transform 0.3s ease',
-                                                                boxShadow: `0 4px 14px ${alpha('#000', 0.15)}`,
-                                                            }}>
-                                                                <FolderOpen size={26} color="#fff" strokeWidth={1.8} />
-                                                            </Box>
-                                                            <Box>
-                                                                <Typography variant="h6" fontWeight={700} sx={{
-                                                                    fontSize: '1.05rem',
-                                                                    letterSpacing: '-0.01em',
-                                                                    lineHeight: 1.3,
-                                                                }}>
-                                                                    {project.name}
-                                                                </Typography>
-                                                                <Typography variant="body2" color="text.secondary" sx={{
-                                                                    mt: 0.3,
-                                                                    opacity: 0.7,
-                                                                    display: '-webkit-box',
-                                                                    WebkitLineClamp: 1,
-                                                                    WebkitBoxOrient: 'vertical',
-                                                                    overflow: 'hidden',
-                                                                    fontSize: '0.8rem',
-                                                                }}>
-                                                                    {project.description || 'Sem descrição'}
-                                                                </Typography>
-                                                            </Box>
+                                                <CardActionArea
+                                                    onClick={() => handleProjectSelect(project)}
+                                                    sx={{ height: '100%', p: 2 }}
+                                                >
+                                                    <Box display="flex" alignItems="center" gap={2}>
+                                                        <Box sx={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            bgcolor: 'rgba(230, 0, 18, 0.05)',
+                                                            borderRadius: 1,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: 'primary.main',
+                                                            border: '1px solid rgba(230, 0, 18, 0.1)'
+                                                        }}>
+                                                            <Folder size={20} />
                                                         </Box>
-                                                        <Box display="flex" alignItems="center" gap={1}>
-                                                            <Chip
-                                                                size="small"
-                                                                label={project.status === 'active' ? 'Ativo' : project.status}
-                                                                sx={{
-                                                                    height: 22,
-                                                                    fontSize: '0.7rem',
-                                                                    fontWeight: 600,
-                                                                    bgcolor: alpha(statusColor, 0.12),
-                                                                    color: statusColor,
-                                                                    border: `1px solid ${alpha(statusColor, 0.3)}`,
-                                                                }}
-                                                            />
-                                                            <Box className="card-arrow" sx={{
-                                                                opacity: 0,
-                                                                transform: 'translateX(-8px)',
-                                                                transition: 'all 0.3s ease',
-                                                                color: 'text.secondary',
-                                                            }}>
-                                                                <ChevronRight size={22} />
-                                                            </Box>
+                                                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                            <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ color: 'text.primary' }}>
+                                                                {project.name}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                Visualizar Dispositivos
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ color: 'text.disabled', display: 'flex' }}>
+                                                            <ChevronRight size={18} />
                                                         </Box>
                                                     </Box>
 
-                                                    <Grid container spacing={2} sx={{ mt: 2 }}>
+                                                    <Grid container spacing={1} sx={{ mt: 2 }}>
                                                         <Grid size={{ xs: 6 }}>
-                                                            <Box sx={{ p: 1, borderRadius: 2, bgcolor: alpha(theme.palette.divider, 0.03), border: `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
-                                                                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>Dispositivos</Typography>
-                                                                <Typography variant="subtitle2" fontWeight={700}>{project.metrics?.devices || 0}</Typography>
+                                                            <Box sx={{ p: 0.8, borderRadius: 1.5, bgcolor: alpha(theme.palette.divider, 0.05), textAlign: 'center' }}>
+                                                                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.6rem' }}>Devices</Typography>
+                                                                <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: '0.8rem' }}>{project.metrics?.devices || 0}</Typography>
                                                             </Box>
                                                         </Grid>
                                                         <Grid size={{ xs: 6 }}>
-                                                            <Box sx={{ p: 1, borderRadius: 2, bgcolor: alpha(theme.palette.divider, 0.03), border: `1px solid ${alpha(theme.palette.divider, 0.05)}` }}>
-                                                                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>Alertas</Typography>
-                                                                <Typography variant="subtitle2" fontWeight={700} color={project.metrics?.alerts ? 'error.main' : 'inherit'}>
+                                                            <Box sx={{ p: 0.8, borderRadius: 1.5, bgcolor: alpha(theme.palette.divider, 0.05), textAlign: 'center' }}>
+                                                                <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.6rem' }}>Alerts</Typography>
+                                                                <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: '0.8rem' }} color={project.metrics?.alerts ? 'error.main' : 'inherit'}>
                                                                     {project.metrics?.alerts || 0}
                                                                 </Typography>
                                                             </Box>
                                                         </Grid>
                                                     </Grid>
-                                                </CardContent>
+                                                </CardActionArea>
                                             </Card>
                                         </Grid>
                                     )
