@@ -31,10 +31,16 @@ import {
     Error as ErrorIcon,
     History as HistoryIcon,
     ChevronRight as DetailsIcon,
-    Refresh as RefreshIcon
+    Refresh as RefreshIcon,
+    Add as AddIcon,
 } from '@mui/icons-material'
 import { api } from '../../services/api'
 import HikCentralConfig from '../../components/integrations/HikCentralConfig'
+
+interface Project {
+    id: string
+    name: string
+}
 
 interface Integration {
     project_id: string
@@ -48,8 +54,9 @@ interface Integration {
 export default function Integrations() {
     const [integrations, setIntegrations] = useState<Integration[]>([])
     const [loading, setLoading] = useState(true)
+    const [projects, setProjects] = useState<Project[]>([])
     const [dialogOpen, setDialogOpen] = useState(false)
-    const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
+    const [selectedIntegration, setSelectedIntegration] = useState<any>(null)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
@@ -60,13 +67,22 @@ export default function Integrations() {
         setLoading(true)
         setError(null)
         try {
-            const data = await api.getAllIntegrations()
+            const [data, projectsSummary] = await Promise.all([
+                api.getAllIntegrations(),
+                api.getProjectsSummary()
+            ])
             setIntegrations(data)
+            setProjects(projectsSummary.map((p: any) => ({ id: p.id, name: p.name })))
         } catch (err: any) {
             setError(err.message || 'Erro ao carregar integrações')
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleAddIntegration = () => {
+        setSelectedIntegration(null)
+        setDialogOpen(true)
     }
 
     const getStatusChip = (status: string) => {
@@ -98,14 +114,24 @@ export default function Integrations() {
                         Gerenciamento global de conexões externas e monitoramento de sincronização
                     </Typography>
                 </Box>
-                <Button
-                    variant="outlined"
-                    startIcon={<RefreshIcon />}
-                    onClick={loadIntegrations}
-                    sx={{ borderRadius: 2 }}
-                >
-                    Atualizar
-                </Button>
+                <Box display="flex" gap={2}>
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={handleAddIntegration}
+                        sx={{ borderRadius: 2, fontWeight: 700 }}
+                    >
+                        Nova Integração
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        startIcon={<RefreshIcon />}
+                        onClick={loadIntegrations}
+                        sx={{ borderRadius: 2 }}
+                    >
+                        Atualizar
+                    </Button>
+                </Box>
             </Box>
 
             {error && (
@@ -152,17 +178,18 @@ export default function Integrations() {
                                             <Box
                                                 component="span"
                                                 sx={{
-                                                    px: 1,
-                                                    py: 0.5,
-                                                    bgcolor: 'primary.light',
-                                                    color: 'primary.dark',
-                                                    borderRadius: 1,
-                                                    fontSize: '0.7rem',
+                                                    px: 1.5,
+                                                    py: 0.8,
+                                                    bgcolor: int.provider === 'hikcentral' ? 'rgba(230, 0, 18, 0.1)' : 'primary.light',
+                                                    color: int.provider === 'hikcentral' ? '#E60012' : 'primary.dark',
+                                                    borderRadius: 1.5,
+                                                    fontSize: '0.75rem',
                                                     fontWeight: 800,
-                                                    textTransform: 'uppercase'
+                                                    textTransform: 'uppercase',
+                                                    border: int.provider === 'hikcentral' ? '1px solid rgba(230, 0, 18, 0.2)' : 'none'
                                                 }}
                                             >
-                                                {int.provider}
+                                                {int.provider === 'hikcentral' ? 'HikCentral Professional' : int.provider}
                                             </Box>
                                         </Box>
                                     </TableCell>
@@ -206,13 +233,42 @@ export default function Integrations() {
                 PaperProps={{ sx: { borderRadius: 3 } }}
             >
                 <DialogTitle sx={{ fontWeight: 800, bgcolor: 'grey.50', pb: 2 }}>
-                    Configurações de Integração
+                    {selectedIntegration ? 'Configurações de Integração' : 'Adicionar Nova Integração'}
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2 }}>
-                    {selectedIntegration && (
+                    {!selectedIntegration ? (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="subtitle2" gutterBottom fontWeight={700}>
+                                Selecione um Projeto
+                            </Typography>
+                            <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap={2} mb={4}>
+                                {projects.map(p => (
+                                    <Card
+                                        key={p.id}
+                                        variant="outlined"
+                                        sx={{
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            '&:hover': { borderColor: 'primary.main', bgcolor: 'primary.light', color: 'primary.dark' }
+                                        }}
+                                        onClick={() => setSelectedIntegration({ project_id: p.id, project_name: p.name, provider: 'hikcentral' })}
+                                    >
+                                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                                            <Typography variant="body2" fontWeight={700}>{p.name}</Typography>
+                                            <Typography variant="caption" color="inherit" sx={{ opacity: 0.7 }}>Clique para configurar HikCentral</Typography>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </Box>
+                        </Box>
+                    ) : (
                         <HikCentralConfig
                             projectId={selectedIntegration.project_id}
                             projectName={selectedIntegration.project_name}
+                            onClose={() => {
+                                setDialogOpen(false)
+                                loadIntegrations()
+                            }}
                         />
                     )}
                 </DialogContent>
